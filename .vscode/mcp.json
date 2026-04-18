@@ -1,0 +1,14 @@
+{
+  "servers": {
+    "topdrawerMcp": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "--directory",
+        "${workspaceFolder}",
+        "run",
+        "topdrawer-mcp"
+      ]
+    }
+  }
+}
