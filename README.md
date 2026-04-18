@@ -1,50 +1,71 @@
 # topdrawer-mcp
 
-MCP server project for agent-facing access to the Topdrawer manual.
+Minimal MCP server for searching a local Topdrawer manual text file.
 
-This repository is intended to provide a documentation-oriented MCP server that
-helps agents look up Topdrawer commands, sections, and related reference
-material without depending on a specific working directory.
+The server exposes one MCP tool, `search_manual`, which performs
+case-insensitive substring search and returns line-numbered snippets.
 
 ## Scope
 
 This repository is responsible for:
 
-- fetching canonical Topdrawer manual sources independently
-- preprocessing those sources into search-oriented indexes
-- exposing manual lookup through an MCP server
+- reading a local plain-text Topdrawer manual
+- exposing simple manual search through an MCP stdio server
 
 This repository is not responsible for:
 
 - building or packaging the `td` executable itself
 - maintaining the upstream Topdrawer source tree
-- broad editor integration work in the initial phase
+- preprocessing complex manual formats into structured indexes
+- maintaining command, section, or generated search indexes
 
-## Canonical sources
+## Data
 
-The initial source set is expected to center on:
+By default, the server reads:
 
-- `topdrawer.doc` as the primary manual source
-- `topdrawer4.0.hlp` as a compact companion reference
-- `contents.html` as a structure/index map
+```text
+data/topdrawer.txt
+```
 
-Generated HTML fragments are intentionally out of scope for the initial phase.
+The file is treated as plain UTF-8 text. The server does not parse Topdrawer
+commands, sections, generated HTML, or source manifests.
 
-## Status
+You can override the manual path with:
 
-This repository is in the planning/bootstrap phase.
+```bash
+TOPDRAWER_MANUAL_PATH=/path/to/manual.txt
+```
 
-The first milestones are:
+## Run
 
-1. define canonical source selection
-2. define preprocessing/indexing rules
-3. add a minimal documentation MCP server
-4. expand manual coverage in phases
+VS Code starts the server with `uv --directory ${workspaceFolder} run
+topdrawer-mcp` in `.vscode/mcp.json`.
 
-## Related repositories
+From the repository root:
 
-- `topdrawer-cmake`: reproducible CMake-based build/install/test workflow for `td`
+```bash
+uv run topdrawer-mcp
+```
 
-This repository should remain loosely coupled to build-oriented repositories.
-It should fetch or manage its own manual inputs rather than depending on a
-specific local build tree.
+VS Code starts the server through:
+
+```text
+.vscode/mcp.json
+```
+
+## MCP Tools
+
+### `search_manual`
+
+Input:
+
+```json
+{
+  "query": "BARGRAPH",
+  "limit": 5,
+  "context_lines": 2
+}
+```
+
+`limit` defaults to `5` and is clamped to `1..20`. `context_lines` defaults to
+`2` and is clamped to `0..10`.

@@ -2,12 +2,12 @@
 
 ## Scope
 
-This repository maintains an MCP server and supporting preprocessing pipeline
-for agent-facing access to the Topdrawer manual.
+This repository maintains a minimal MCP server for agent-facing plain-text
+search over the Topdrawer manual.
 
-Focus on documentation ingestion, indexing, source traceability, and manual
-lookup behavior. Do not turn this repository into a build/install wrapper for
-`td` itself.
+Focus on simple manual search behavior, MCP stdio compatibility, and a small
+maintainable Python package layout. Do not turn this repository into a
+build/install wrapper for `td` itself.
 
 ## Versioning Policy
 
@@ -15,11 +15,11 @@ lookup behavior. Do not turn this repository into a build/install wrapper for
 - Use Git tags in the form `vX.Y.Z`.
 - Prefer full semantic versions.
 - Use patch releases for small maintenance fixes, documentation corrections,
-  and indexing quality improvements.
+  and search behavior improvements.
 - Use minor releases for meaningful user-facing milestones such as:
   - MCP tool/interface additions
-  - preprocessing/index schema changes
-  - major coverage expansions
+  - manual data format changes
+  - broader documented setup support
 - If the project is still pre-1.0, prefer small focused releases and keep scope
   clear in each tag.
 
@@ -33,20 +33,10 @@ lookup behavior. Do not turn this repository into a build/install wrapper for
 ## Branch and PR Policy
 
 - Keep pull requests focused on one coherent change.
-- Separate preprocessing/index changes from server behavior changes when
-  practical.
 - Before merging, confirm that required checks pass.
 - Keep PR titles and labels useful for generated release notes.
 - Apply a release-note label when practical, such as `build`, `docs`, `data`,
-  `mcp`, `index`, or `release`.
-
-## Issue-Driven Follow-up
-
-- Capture manual coverage expansion and source-policy changes as GitHub issues.
-- Before starting new work, review open issues first.
-- Keep each pull request aligned with one issue or one small related group of
-  issues where practical.
-- Do not silently broaden scope; record expansion explicitly in issues.
+  `mcp`, or `release`.
 
 ## Release Workflow
 
@@ -90,49 +80,35 @@ Recommended template:
 
 ## Canonical Source Policy
 
-- Treat `topdrawer.doc` as the primary manual source unless repository policy
-  changes.
-- Treat `topdrawer4.0.hlp` as a compact companion reference.
-- Treat `contents.html` as a structure/index aid.
-- Do not ingest the full generated `html/*.html` tree in the initial phase
-  unless an issue explicitly expands scope.
-- Keep source acquisition deterministic and reproducible.
-- Prefer explicit source metadata such as version, origin URL, and checksums
-  when practical.
+The MCP server reads a single plain-text manual file by default:
+`data/topdrawer.txt`.
 
-## Indexing and Traceability Policy
-
-- Preserve traceability from indexed entries back to canonical manual sections.
-- Prefer small, inspectable preprocessing outputs over opaque pipelines.
-- Keep parsing, normalization, and MCP-serving concerns separated.
-- When schema or indexing behavior changes, document compatibility impact.
-- Avoid lossy transformations unless they are deliberate and recorded.
+Do not add preprocessing, structured indexing, command extraction, or source
+acquisition machinery unless repository policy is intentionally changed first.
+If the manual data source changes, keep the runtime contract simple: the server
+should still search one plain-text file or an explicitly configured replacement.
 
 ## Documentation Consistency Rules
 
-- Keep README focused on repository purpose, source policy, setup, and phased
-  coverage.
-- Update documentation when canonical sources, indexing schema, MCP tools, or
+- Keep README focused on repository purpose, manual text location, setup, and
+  the supported MCP tool.
+- Update documentation when the manual text location, MCP tool surface, or
   supported setup flow changes.
-- Record phase boundaries and coverage growth explicitly.
 - Keep examples consistent with the currently supported MCP surface.
 
 ## Packaging and Verification
 
 - Keep the repository runnable from a clean environment using documented setup.
 - Prefer lightweight reproducible local setup over undocumented assumptions.
-- If source fetching or indexing behavior changes, verify the documented flow
-  from source acquisition through index generation.
+- Use `pyproject.toml` for the Python package entrypoint.
 - Keep generated artifacts out of version control unless intentionally tracked.
 
 ## Change Discipline
 
-- Do not mix broad manual-coverage expansion with unrelated refactors.
 - Prefer narrow, reviewable changes over large undocumented rewrites.
-- Do not silently broaden scope from “lookup support” into unrelated assistant
-  features unless issues and repository policy are updated first.
+- Do not silently broaden scope from simple plain-text search into unrelated
+  assistant features unless repository policy is updated first.
 - Preserve the distinction between:
-  - source acquisition
-  - preprocessing/index generation
-  - MCP server behavior
-  - downstream/editor integrations
+- manual data
+- MCP server behavior
+- downstream/editor configuration
