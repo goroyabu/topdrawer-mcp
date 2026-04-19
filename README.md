@@ -16,8 +16,9 @@ This repository is not responsible for:
 
 - building or packaging the `td` executable itself
 - maintaining the upstream Topdrawer source tree
-- preprocessing complex manual formats into structured indexes
-- maintaining command, section, or generated search indexes
+- executing `td` or rewriting `.top` files
+- broad manual preprocessing before the source policy and generated data
+  contracts are intentionally updated
 
 ## Data
 
@@ -35,6 +36,9 @@ You can override the manual path with:
 ```bash
 TOPDRAWER_MANUAL_PATH=/path/to/manual.txt
 ```
+
+See [docs/source-policy.md](docs/source-policy.md) for how this repository
+treats canonical manual sources, companion sources, and future generated data.
 
 ## Run
 
