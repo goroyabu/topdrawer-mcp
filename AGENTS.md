@@ -83,10 +83,13 @@ Recommended template:
 The MCP server reads a single plain-text manual file by default:
 `data/topdrawer.txt`.
 
-Do not add preprocessing, structured indexing, command extraction, or source
-acquisition machinery unless repository policy is intentionally changed first.
-If the manual data source changes, keep the runtime contract simple: the server
-should still search one plain-text file or an explicitly configured replacement.
+Keep the current runtime contract simple: the server should search one
+plain-text file or an explicitly configured replacement.
+
+Use `docs/source-policy.md` for canonical manual source decisions, companion
+source decisions, and generated data expectations. Do not add broad
+preprocessing, structured indexing, command extraction, or source acquisition
+machinery outside the documented phase plan.
 
 ## Documentation Consistency Rules
 
