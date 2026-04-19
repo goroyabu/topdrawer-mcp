@@ -6,6 +6,11 @@ dependencies = [
     "mcp[cli]",
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest",
+]
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
@@ -15,3 +20,9 @@ topdrawer-mcp = "topdrawer_mcp.server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+markers = [
+    "unit: fast tests that exercise Python functions directly",
+    "integration: tests that run external processes or MCP clients",
+]

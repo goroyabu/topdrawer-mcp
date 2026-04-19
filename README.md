@@ -69,3 +69,26 @@ Input:
 
 `limit` defaults to `5` and is clamped to `1..20`. `context_lines` defaults to
 `2` and is clamped to `0..10`.
+
+## Test
+
+Run the full test suite:
+
+```bash
+uv run --extra test pytest
+```
+
+Run only Python unit tests:
+
+```bash
+uv run --extra test pytest -m unit
+```
+
+Run only Inspector-based integration tests:
+
+```bash
+uv run --extra test pytest -m integration
+```
+
+The integration tests use `npx @modelcontextprotocol/inspector` and require
+Node.js with `npx` available on `PATH`.
