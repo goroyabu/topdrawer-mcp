@@ -87,9 +87,11 @@ Keep the current runtime contract simple: the server should search one
 plain-text file or an explicitly configured replacement.
 
 Use `docs/source-policy.md` for canonical manual source decisions, companion
-source decisions, and generated data expectations. Do not add broad
-preprocessing, structured indexing, command extraction, or source acquisition
-machinery outside the documented phase plan.
+source decisions, and generated data expectations. Small build-time
+preprocessing additions are acceptable when they stay within the documented
+source policy and an agreed issue scope. Do not add broad preprocessing,
+structured indexing, command extraction, or source acquisition machinery
+outside that scope.
 
 ## Documentation Consistency Rules
 
@@ -112,6 +114,6 @@ machinery outside the documented phase plan.
 - Do not silently broaden scope from simple plain-text search into unrelated
   assistant features unless repository policy is updated first.
 - Preserve the distinction between:
-- manual data
-- MCP server behavior
-- downstream/editor configuration
+  - manual data
+  - MCP server behavior
+  - downstream/editor configuration

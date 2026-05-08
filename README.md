@@ -17,8 +17,7 @@ This repository is not responsible for:
 - building or packaging the `td` executable itself
 - maintaining the upstream Topdrawer source tree
 - executing `td` or rewriting `.top` files
-- broad manual preprocessing before the source policy and generated data
-  contracts are intentionally updated
+- broad manual preprocessing beyond the currently agreed source-policy scope
 
 ## Data
 
@@ -39,6 +38,24 @@ TOPDRAWER_MANUAL_PATH=/path/to/manual.txt
 
 See [docs/source-policy.md](docs/source-policy.md) for how this repository
 treats canonical manual sources, companion sources, and future generated data.
+
+## Preprocess
+
+An optional build-time preprocessing CLI exists for small, deterministic index
+generation tasks. The current first pass extracts top-level Chapter 15 command
+sections from `topdrawer.doc`.
+
+Run it from the repository root:
+
+```bash
+uv run topdrawer-mcp-preprocess
+```
+
+You can override the source file path with:
+
+```bash
+TOPDRAWER_DOC_SOURCE_PATH=/path/to/topdrawer.doc uv run topdrawer-mcp-preprocess
+```
 
 ## Run
 

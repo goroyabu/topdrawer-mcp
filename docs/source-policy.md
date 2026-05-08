@@ -91,13 +91,21 @@ them when the required upstream sources are available.
 
 ## Preprocessing Direction
 
-Preprocessing should start small. The first useful target is a framework that can
-read the canonical source and produce stable metadata for selected manual
-sections.
+Preprocessing should stay small. The current first pass reads the canonical
+source and produces stable metadata for selected manual sections.
 
-Chapter 15 command material is the primary structured lookup target, but it is
-large. Initial preprocessing should support a small set of representative
-commands before expanding coverage.
+The current implementation adds a small build-time CLI:
+
+```text
+topdrawer-mcp-preprocess
+```
+
+It extracts top-level Chapter 15 command sections from `topdrawer.doc` and
+writes a deterministic command index.
+
+Chapter 15 command material remains the primary structured lookup target, but
+it is large. The current preprocessing pass is intentionally limited to
+top-level command sections before any broader expansion.
 
 Useful early outputs include:
 
@@ -105,6 +113,12 @@ Useful early outputs include:
 - section identifiers or headings
 - source line or section references
 - extracted text blocks for selected commands
+
+The current generated output is:
+
+```text
+data/index/command-index.json
+```
 
 Do not add broad generated-HTML ingestion, source acquisition machinery, or full
 command coverage in the first preprocessing pass.
