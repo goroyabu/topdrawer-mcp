@@ -3,11 +3,12 @@
 ## Scope
 
 This repository maintains a minimal MCP server for agent-facing plain-text
-search over the Topdrawer manual.
+search over the Topdrawer manual and narrow runtime rendering of existing
+Topdrawer input files.
 
-Focus on simple manual search behavior, MCP stdio compatibility, and a small
-maintainable Python package layout. Do not turn this repository into a
-build/install wrapper for `td` itself.
+Focus on simple manual search behavior, narrow render behavior, MCP stdio
+compatibility, and a small maintainable Python package layout. Do not turn this
+repository into a build/install wrapper for `td` itself.
 
 ## Versioning Policy
 
@@ -95,8 +96,8 @@ outside that scope.
 
 ## Documentation Consistency Rules
 
-- Keep README focused on repository purpose, manual text location, setup, and
-  the supported MCP tool.
+- Keep README focused on repository purpose, manual text location, render
+  prerequisites, setup, and the supported MCP tools.
 - Update documentation when the manual text location, MCP tool surface, or
   supported setup flow changes.
 - Keep examples consistent with the currently supported MCP surface.

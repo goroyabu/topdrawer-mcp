@@ -7,6 +7,9 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
+from topdrawer_mcp.render import RenderResult
+from topdrawer_mcp.render import render_topdrawer_input
+
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_MANUAL_PATH = ROOT_DIR / "data" / "topdrawer.txt"
@@ -118,10 +121,30 @@ def search_manual(query: str, limit: int = 5, context_lines: int = 2) -> str:
     return _format_matches(stripped_query, matches)
 
 
+def render_topdrawer_file(
+    input_path: str,
+    output_path: str | None = None,
+    overwrite: bool = False,
+) -> RenderResult:
+    """Render an existing Topdrawer input file into a PNG image.
+
+    Args:
+        input_path: Absolute or current-working-directory-relative Topdrawer input file.
+        output_path: Optional PNG output path. Defaults to a unique system temp path.
+        overwrite: Whether an existing output file may be replaced.
+    """
+    return render_topdrawer_input(
+        input_path=input_path,
+        output_path=output_path,
+        overwrite=overwrite,
+    )
+
+
 def create_server() -> FastMCP:
     """Create the MCP server and register its tools."""
     server = FastMCP("topdrawer-mcp")
     server.add_tool(search_manual)
+    server.add_tool(render_topdrawer_file, structured_output=True)
     return server
 
 
