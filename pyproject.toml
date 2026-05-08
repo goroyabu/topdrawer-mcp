@@ -17,6 +17,7 @@ build-backend = "setuptools.build_meta"
 
 [project.scripts]
 topdrawer-mcp = "topdrawer_mcp.server:main"
+topdrawer-mcp-preprocess = "topdrawer_mcp.preprocess.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
