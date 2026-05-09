@@ -70,6 +70,8 @@ def test_inspector_lists_search_manual(write_manual):
     assert "search_manual" in names
     assert "render_topdrawer_file" in names
     assert "render_topdrawer_script" in names
+    assert "list_manual_samples" in names
+    assert "get_manual_sample" in names
 
 
 def test_inspector_calls_search_manual(write_manual):
@@ -93,6 +95,53 @@ def test_inspector_calls_search_manual(write_manual):
     text = response["content"][0]["text"]
     assert "Found 1 matches for 'BARGRAPH'." in text
     assert "> 2: BARGRAPH command" in text
+
+
+def test_inspector_calls_list_manual_samples(write_manual):
+    manual_path = write_manual("BARGRAPH command\n")
+
+    response = _run_inspector(
+        manual_path,
+        "--method",
+        "tools/call",
+        "--tool-name",
+        "list_manual_samples",
+        "--tool-arg",
+        "category=histogram",
+        "--tool-arg",
+        "command=HISTOGRAM",
+    )
+
+    assert response["isError"] is False
+    structured = response["structuredContent"]
+    assert structured["samples"] == [
+        {
+            "id": "histogram-basic",
+            "title": "Basic histogram",
+            "category": "histogram",
+            "description": "Draws a simple histogram from point-like x/y input pairs.",
+            "primary_commands": ["HISTOGRAM"],
+        }
+    ]
+
+
+def test_inspector_calls_get_manual_sample(write_manual):
+    manual_path = write_manual("BARGRAPH command\n")
+
+    response = _run_inspector(
+        manual_path,
+        "--method",
+        "tools/call",
+        "--tool-name",
+        "get_manual_sample",
+        "--tool-arg",
+        "sample_id=scatter-error-bars",
+    )
+
+    assert response["isError"] is False
+    structured = response["structuredContent"]
+    assert structured["id"] == "scatter-error-bars"
+    assert structured["category"] == "scatter"
 
 
 def test_inspector_calls_render_topdrawer_file(write_manual, tmp_path: Path):

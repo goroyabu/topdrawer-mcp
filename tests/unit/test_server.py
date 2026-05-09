@@ -95,6 +95,8 @@ def test_create_server_registers_search_and_render_tools():
     assert "search_manual" in tool_names
     assert "render_topdrawer_file" in tool_names
     assert "render_topdrawer_script" in tool_names
+    assert "list_manual_samples" in tool_names
+    assert "get_manual_sample" in tool_names
 
 
 def test_render_topdrawer_script_rejects_empty_script():
@@ -131,3 +133,26 @@ def test_render_topdrawer_script_uses_shared_render_core(monkeypatch: pytest.Mon
         "overwrite": True,
     }
     assert result["success"] is True
+
+
+def test_list_manual_samples_returns_structured_entries():
+    result = server.list_manual_samples(category="histogram")
+
+    assert result == {
+        "samples": [
+            {
+                "id": "histogram-basic",
+                "title": "Basic histogram",
+                "category": "histogram",
+                "description": "Draws a simple histogram from point-like x/y input pairs.",
+                "primary_commands": ["HISTOGRAM"],
+            }
+        ]
+    }
+
+
+def test_get_manual_sample_returns_structured_entry():
+    result = server.get_manual_sample("scatter-error-bars")
+
+    assert result["id"] == "scatter-error-bars"
+    assert result["category"] == "scatter"
