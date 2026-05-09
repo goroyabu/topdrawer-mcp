@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "samples": [
+    {
+      "id": "scatter-error-bars",
+      "title": "Error-bar scatter plot",
+      "category": "scatter",
+      "description": "Plots x/y points with both x and y error bars using an explicit data-column order.",
+      "primary_commands": ["SET SYMBOL", "SET ORDER", "PLOT"]
+    },
+    {
+      "id": "symbols-font-duplex",
+      "title": "Symbol showcase with duplex font",
+      "category": "symbols",
+      "description": "Shows multiple symbol codes in one scatter plot with duplex font enabled.",
+      "primary_commands": ["SET FONT", "SET ORDER", "PLOT"]
+    },
+    {
+      "id": "join-basic",
+      "title": "Basic join plot",
+      "category": "join",
+      "description": "Connects numeric points with a line using the join command.",
+      "primary_commands": ["JOIN"]
+    },
+    {
+      "id": "histogram-basic",
+      "title": "Basic histogram",
+      "category": "histogram",
+      "description": "Draws a simple histogram from point-like x/y input pairs.",
+      "primary_commands": ["HISTOGRAM"]
+    },
+    {
+      "id": "function-join",
+      "title": "Function plotting with expressions",
+      "category": "function",
+      "description": "Plots analytic functions by sweeping x values and computing y expressions before joining the result.",
+      "primary_commands": ["JOIN", "DEL ALL"]
+    },
+    {
+      "id": "title-text-placement",
+      "title": "Titles and text placement",
+      "category": "title",
+      "description": "Demonstrates top, bottom, left, right, text-coordinate, and data-coordinate title placement.",
+      "primary_commands": ["SET FONT", "SET WINDOW", "SET LIMITS", "PLOT AXIS", "TITLE", "PLOT TITLE"]
+    },
+    {
+      "id": "ticks-scale-window",
+      "title": "Tick and scale tuning",
+      "category": "ticks",
+      "description": "Uses window splits, tick sizing, and axis scale controls to compare tick and label density.",
+      "primary_commands": ["SET WINDOW", "TITLE", "SET TICKS", "SET SCALE", "SET SYMBOL", "PLOT"]
+    },
+    {
+      "id": "labels-manual-axis-annotations",
+      "title": "Manual label placement",
+      "category": "labels",
+      "description": "Turns axis labels on and off and recreates selected axis labels with explicit title commands.",
+      "primary_commands": ["SET LABELS", "TITLE DATA", "JOIN", "PLOT"]
+    },
+    {
+      "id": "window-multi-panel-layout",
+      "title": "Multi-window layout",
+      "category": "window",
+      "description": "Builds a multi-panel page layout by dividing the drawing area into window regions and plotting into each one.",
+      "primary_commands": ["SET WINDOW", "TITLE", "SET SYMBOL", "PLOT"]
+    },
+    {
+      "id": "polar-plot-layout",
+      "title": "Polar plot layout",
+      "category": "polar",
+      "description": "Demonstrates polar plotting combined with windows, limits, titles, and CASE annotations.",
+      "primary_commands": ["SET POLAR", "SET WINDOW", "SET LIMITS", "TITLE", "CASE", "JOIN", "PLOT AXIS"]
+    }
+  ]
+}
