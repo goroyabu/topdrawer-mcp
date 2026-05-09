@@ -68,6 +68,13 @@ TOPDRAWER_DOC_SOURCE_PATH=/path/to/topdrawer.doc uv run topdrawer-mcp-preprocess
 VS Code starts the server with `uv --directory ${workspaceFolder} run
 topdrawer-mcp` in `.vscode/mcp.json`.
 
+`${workspaceFolder}` is a VS Code substitution and is not portable to other MCP
+clients. Outside VS Code, use an absolute repository path, for example:
+
+```bash
+uv --directory /absolute/path/to/topdrawer-mcp run topdrawer-mcp
+```
+
 From the repository root:
 
 ```bash
@@ -80,6 +87,10 @@ available on `PATH`. You can override the `td` executable path with:
 ```bash
 TD_EXECUTABLE_PATH=/path/to/td uv run topdrawer-mcp
 ```
+
+When running through an MCP client, pass `TOPDRAWER_MANUAL_PATH` and
+`TD_EXECUTABLE_PATH` through the client's environment configuration rather than
+editing repository defaults.
 
 VS Code starts the server through:
 
