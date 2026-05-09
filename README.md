@@ -3,11 +3,14 @@
 Minimal MCP server for searching a local Topdrawer manual text file and
 rendering existing Topdrawer input files through an external `td` executable.
 
-The server exposes two MCP tools:
+The server exposes MCP tools for manual search, render, and sample metadata
+discovery:
 
 - `search_manual` for case-insensitive substring search with line-numbered snippets
 - `render_topdrawer_file` for rendering an existing Topdrawer input file to PNG
 - `render_topdrawer_script` for rendering inline Topdrawer script text to PNG
+- `list_manual_samples` for listing curated sample metadata with optional filters
+- `get_manual_sample` for fetching one curated sample metadata entry by id
 
 ## Scope
 
@@ -168,6 +171,37 @@ PostScript BoundingBox with small padding.
 Use `render_topdrawer_script` when the caller has inline Topdrawer text, chat
 data that the agent converts into a script, or a script variant that does not
 need to be saved as a persistent `.top` file first.
+
+### `list_manual_samples`
+
+Input:
+
+```json
+{
+  "category": "histogram",
+  "command": "HISTOGRAM",
+  "query": "basic",
+  "limit": 20
+}
+```
+
+All filters are optional. `category` matches one curated sample category.
+`command` matches `primary_commands` case-insensitively. `query` performs a
+case-insensitive substring search over sample metadata only. This tool returns
+metadata only; it does not return sample script text.
+
+### `get_manual_sample`
+
+Input:
+
+```json
+{
+  "sample_id": "scatter-error-bars"
+}
+```
+
+Returns one curated sample metadata entry by id. This tool returns metadata
+only; sample script text remains out of scope for the current MCP surface.
 
 ## Test
 

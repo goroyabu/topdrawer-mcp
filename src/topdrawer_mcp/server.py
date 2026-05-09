@@ -10,6 +10,10 @@ from mcp.server.fastmcp import FastMCP
 from topdrawer_mcp.render import RenderResult
 from topdrawer_mcp.render import render_topdrawer_input
 from topdrawer_mcp.render import render_topdrawer_source_text
+from topdrawer_mcp.sample_catalog import SampleCatalogEntry
+from topdrawer_mcp.sample_catalog import SampleCatalogListResult
+from topdrawer_mcp.sample_catalog import get_sample_catalog_entry
+from topdrawer_mcp.sample_catalog import list_sample_catalog_entries
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -166,12 +170,43 @@ def render_topdrawer_script(
     )
 
 
+def list_manual_samples(
+    category: str | None = None,
+    command: str | None = None,
+    query: str | None = None,
+    limit: int = 20,
+) -> SampleCatalogListResult:
+    """List curated manual-sample metadata with optional filtering.
+
+    Args:
+        category: Optional exact sample category such as ``histogram``.
+        command: Optional primary command name such as ``PLOT`` or ``JOIN``.
+        query: Optional case-insensitive substring query over sample metadata.
+        limit: Maximum number of entries to return. Clamped to 1..20.
+    """
+    return {
+        "samples": list_sample_catalog_entries(
+            category=category,
+            command=command,
+            query=query,
+            limit=limit,
+        )
+    }
+
+
+def get_manual_sample(sample_id: str) -> SampleCatalogEntry:
+    """Return one curated manual-sample metadata entry by id."""
+    return get_sample_catalog_entry(sample_id)
+
+
 def create_server() -> FastMCP:
     """Create the MCP server and register its tools."""
     server = FastMCP("topdrawer-mcp")
     server.add_tool(search_manual)
     server.add_tool(render_topdrawer_file, structured_output=True)
     server.add_tool(render_topdrawer_script, structured_output=True)
+    server.add_tool(list_manual_samples, structured_output=True)
+    server.add_tool(get_manual_sample, structured_output=True)
     return server
 
 
