@@ -12,6 +12,8 @@ TD_EXECUTABLE_ENV = "TD_EXECUTABLE_PATH"
 TD_PS_FILENAME = "render.ps"
 TD_WRAPPER_FILENAME = "render.top"
 TD_ERROR_MARKERS = ("*** ERROR ***", "ERROR FOUND BY THE UNIFIED GRAPHICS SYSTEM")
+GS_RENDER_DPI = 160
+GS_PADDING_POINTS = 12
 
 
 class RenderResult(TypedDict):
@@ -81,6 +83,22 @@ def resolve_output_path(output_path: str | None) -> Path:
     return candidate.resolve()
 
 
+def resolve_base_dir(base_dir: str | None) -> Path:
+    """Resolve the base directory used for relative paths inside a script."""
+    if base_dir is None:
+        return Path.cwd().resolve()
+
+    candidate = Path(base_dir).expanduser()
+    if not candidate.is_absolute():
+        candidate = Path.cwd() / candidate
+    resolved = candidate.resolve()
+    if not resolved.exists():
+        raise FileNotFoundError(f"Base directory does not exist: {resolved}")
+    if not resolved.is_dir():
+        raise NotADirectoryError(f"Base directory is not a directory: {resolved}")
+    return resolved
+
+
 def build_wrapper_text(source_text: str, ps_filename: str = TD_PS_FILENAME) -> str:
     """Prepend a PostScript output directive to the original Topdrawer input."""
     normalized = source_text
@@ -89,13 +107,81 @@ def build_wrapper_text(source_text: str, ps_filename: str = TD_PS_FILENAME) -> s
     return f"SET DEVICE POSTSCR FILE='{ps_filename}'\n{normalized}"
 
 
-def render_topdrawer_input(
-    input_path: str,
+def read_postscript_bbox(ps_path: Path, gs_executable: Path) -> tuple[int, int, int, int]:
+    """Read the PostScript bounding box via Ghostscript's bbox device."""
+    bbox_result = subprocess.run(
+        [
+            str(gs_executable),
+            "-q",
+            "-dSAFER",
+            "-dNOPAUSE",
+            "-dBATCH",
+            "-sDEVICE=bbox",
+            str(ps_path),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    bbox_output = f"{bbox_result.stdout}{bbox_result.stderr}"
+    if bbox_result.returncode != 0:
+        raise RuntimeError(
+            f"`gs` bbox exited with code {bbox_result.returncode}: {_summarize_output(bbox_output)}"
+        )
+
+    for line in bbox_output.splitlines():
+        if line.startswith("%%BoundingBox:"):
+            parts = line.split()
+            if len(parts) != 5:
+                break
+            return tuple(int(value) for value in parts[1:5])
+
+    raise RuntimeError("`gs` bbox did not report a BoundingBox")
+
+
+def build_gs_png_command(
+    gs_executable: Path,
+    ps_path: Path,
+    output_path: Path,
+    bbox: tuple[int, int, int, int],
+    *,
+    padding_points: int = GS_PADDING_POINTS,
+    resolution_dpi: int = GS_RENDER_DPI,
+) -> list[str]:
+    """Build the Ghostscript command that renders a trimmed, white-background PNG."""
+    llx, lly, urx, ury = bbox
+    width = urx - llx + padding_points * 2
+    height = ury - lly + padding_points * 2
+    tx = padding_points - llx
+    ty = padding_points - lly
+    return [
+        str(gs_executable),
+        "-q",
+        "-dSAFER",
+        "-dBATCH",
+        "-dNOPAUSE",
+        "-sDEVICE=png16m",
+        f"-r{resolution_dpi}",
+        f"-dDEVICEWIDTHPOINTS={width}",
+        f"-dDEVICEHEIGHTPOINTS={height}",
+        "-dFIXEDMEDIA",
+        f"-sOutputFile={output_path}",
+        "-c",
+        f"{tx} {ty} translate",
+        "-f",
+        str(ps_path),
+    ]
+
+
+def render_topdrawer_source_text(
+    source_text: str,
+    *,
+    base_dir: str | None = None,
     output_path: str | None = None,
     overwrite: bool = False,
 ) -> RenderResult:
-    """Render an existing Topdrawer input file into a PNG image."""
-    resolved_input = resolve_input_path(input_path)
+    """Render Topdrawer source text into a PNG image."""
+    resolved_base_dir = resolve_base_dir(base_dir)
     resolved_output = resolve_output_path(output_path)
     td_executable = resolve_td_executable()
     gs_executable = resolve_gs_executable()
@@ -106,17 +192,16 @@ def render_topdrawer_input(
         )
 
     resolved_output.parent.mkdir(parents=True, exist_ok=True)
-    source_text = resolved_input.read_text(encoding="utf-8", errors="replace")
 
     with tempfile.TemporaryDirectory(prefix="topdrawer-mcp-render-work-") as workdir_text:
         workdir = Path(workdir_text)
         wrapper_path = workdir / TD_WRAPPER_FILENAME
         ps_path = workdir / TD_PS_FILENAME
-        wrapper_path.write_text(build_wrapper_text(source_text), encoding="utf-8")
+        wrapper_path.write_text(build_wrapper_text(source_text, str(ps_path)), encoding="utf-8")
 
         td_result = subprocess.run(
             [str(td_executable), str(wrapper_path)],
-            cwd=workdir,
+            cwd=resolved_base_dir,
             capture_output=True,
             text=True,
             check=False,
@@ -133,17 +218,9 @@ def render_topdrawer_input(
                 f"`td` did not produce the expected PostScript output: {ps_path}"
             )
 
+        bbox = read_postscript_bbox(ps_path, gs_executable)
         gs_result = subprocess.run(
-            [
-                str(gs_executable),
-                "-dSAFER",
-                "-dBATCH",
-                "-dNOPAUSE",
-                "-sDEVICE=pngalpha",
-                "-r144",
-                f"-sOutputFile={resolved_output}",
-                str(ps_path),
-            ],
+            build_gs_png_command(gs_executable, ps_path, resolved_output, bbox),
             cwd=workdir,
             capture_output=True,
             text=True,
@@ -169,6 +246,22 @@ def render_topdrawer_input(
         td_executable=str(td_executable),
         success=True,
         message=message,
+    )
+
+
+def render_topdrawer_input(
+    input_path: str,
+    output_path: str | None = None,
+    overwrite: bool = False,
+) -> RenderResult:
+    """Render an existing Topdrawer input file into a PNG image."""
+    resolved_input = resolve_input_path(input_path)
+    source_text = resolved_input.read_text(encoding="utf-8", errors="replace")
+    return render_topdrawer_source_text(
+        source_text,
+        base_dir=str(resolved_input.parent),
+        output_path=output_path,
+        overwrite=overwrite,
     )
 
 

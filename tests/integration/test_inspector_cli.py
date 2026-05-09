@@ -69,6 +69,7 @@ def test_inspector_lists_search_manual(write_manual):
     names = [tool["name"] for tool in response["tools"]]
     assert "search_manual" in names
     assert "render_topdrawer_file" in names
+    assert "render_topdrawer_script" in names
 
 
 def test_inspector_calls_search_manual(write_manual):
@@ -119,6 +120,33 @@ def test_inspector_calls_render_topdrawer_file(write_manual, tmp_path: Path):
         "render_topdrawer_file",
         "--tool-arg",
         f"input_path={input_path}",
+        "--tool-arg",
+        f"output_path={output_path}",
+        "--tool-arg",
+        "overwrite=true",
+    )
+
+    assert response["isError"] is False
+    structured = response["structuredContent"]
+    assert structured["success"] is True
+    assert Path(structured["output_path"]).exists()
+
+
+def test_inspector_calls_render_topdrawer_script(write_manual, tmp_path: Path):
+    if shutil.which("td") is None or shutil.which("gs") is None:
+        pytest.skip("td and gs are required for render Inspector integration tests")
+
+    manual_path = write_manual("BARGRAPH command\n")
+    output_path = tmp_path / "output-script.png"
+
+    response = _run_inspector(
+        manual_path,
+        "--method",
+        "tools/call",
+        "--tool-name",
+        "render_topdrawer_script",
+        "--tool-arg",
+        "script=set symbol 1P\nset order y x dx dy\n100 1 0.5 10\n144 2 0.5 12\n196 3 0.5 14\nplot\n",
         "--tool-arg",
         f"output_path={output_path}",
         "--tool-arg",

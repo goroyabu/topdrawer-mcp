@@ -7,6 +7,7 @@ The server exposes two MCP tools:
 
 - `search_manual` for case-insensitive substring search with line-numbered snippets
 - `render_topdrawer_file` for rendering an existing Topdrawer input file to PNG
+- `render_topdrawer_script` for rendering inline Topdrawer script text to PNG
 
 ## Scope
 
@@ -15,6 +16,7 @@ This repository is responsible for:
 - reading a local plain-text Topdrawer manual
 - exposing simple manual search through an MCP stdio server
 - executing an already-installed `td` binary to render an existing input file
+- executing inline Topdrawer script text through the same rendering pipeline
 
 This repository is not responsible for:
 
@@ -116,7 +118,9 @@ Input:
 
 `input_path` may be absolute or current-working-directory-relative.
 `output_path` is optional; when omitted, the server writes to a unique PNG path
-under the system temp directory. `overwrite` defaults to `false`.
+under the system temp directory. `overwrite` defaults to `false`. PNG output is
+rendered with an opaque white background and trimmed to the PostScript
+BoundingBox with small padding.
 
 Example Topdrawer input:
 
@@ -128,6 +132,31 @@ set order y x dx dy
 196 3 0.5 14
 plot
 ```
+
+Use `render_topdrawer_file` when you already have a `.top` file on disk.
+
+### `render_topdrawer_script`
+
+Input:
+
+```json
+{
+  "script": "set symbol 1P\nset order y x dx dy\n100 1 0.5 10\n144 2 0.5 12\n196 3 0.5 14\nplot\n",
+  "base_dir": "/tmp/sample-data",
+  "output_path": "/tmp/output.png",
+  "overwrite": false
+}
+```
+
+`script` must be non-empty. `base_dir` is optional and controls how relative
+paths inside the script, such as `set file input='dat'`, are resolved. When
+omitted, relative references use the server's current working directory. PNG
+output is rendered with an opaque white background and trimmed to the
+PostScript BoundingBox with small padding.
+
+Use `render_topdrawer_script` when the caller has inline Topdrawer text, chat
+data that the agent converts into a script, or a script variant that does not
+need to be saved as a persistent `.top` file first.
 
 ## Test
 

@@ -101,3 +101,44 @@ def test_render_topdrawer_input_fails_when_output_exists(tmp_path: Path):
             output_path=str(output_path),
             overwrite=False,
         )
+
+
+def test_render_topdrawer_source_text_renders_error_bar_sample(tmp_path: Path):
+    if shutil.which("td") is None or shutil.which("gs") is None:
+        pytest.skip("td and gs are required for render integration tests")
+
+    output_path = tmp_path / "inline-output.png"
+
+    result = render.render_topdrawer_source_text(
+        "set symbol 1P\n"
+        "set order y x dx dy\n"
+        "100 1 0.5 10\n"
+        "144 2 0.5 12\n"
+        "196 3 0.5 14\n"
+        "plot\n",
+        output_path=str(output_path),
+    )
+
+    assert result["success"] is True
+    assert Path(result["output_path"]) == output_path.resolve()
+    _assert_png_file(output_path)
+
+
+def test_render_topdrawer_source_text_renders_relative_data_file_from_base_dir(tmp_path: Path):
+    if shutil.which("td") is None or shutil.which("gs") is None:
+        pytest.skip("td and gs are required for render integration tests")
+
+    base_dir = tmp_path / "sample"
+    base_dir.mkdir()
+    (base_dir / "dat").write_text("1 1\n2 4\n3 9\n", encoding="utf-8")
+    output_path = tmp_path / "relative-data.png"
+
+    result = render.render_topdrawer_source_text(
+        "set file input='dat'\njoin\n",
+        base_dir=str(base_dir),
+        output_path=str(output_path),
+    )
+
+    assert result["success"] is True
+    assert Path(result["output_path"]) == output_path.resolve()
+    _assert_png_file(output_path)
