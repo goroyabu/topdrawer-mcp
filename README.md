@@ -1,9 +1,12 @@
 # topdrawer-mcp
 
-Minimal MCP server for searching a local Topdrawer manual text file.
+Minimal MCP server for searching a local Topdrawer manual text file and
+rendering existing Topdrawer input files through an external `td` executable.
 
-The server exposes one MCP tool, `search_manual`, which performs
-case-insensitive substring search and returns line-numbered snippets.
+The server exposes two MCP tools:
+
+- `search_manual` for case-insensitive substring search with line-numbered snippets
+- `render_topdrawer_file` for rendering an existing Topdrawer input file to PNG
 
 ## Scope
 
@@ -11,12 +14,13 @@ This repository is responsible for:
 
 - reading a local plain-text Topdrawer manual
 - exposing simple manual search through an MCP stdio server
+- executing an already-installed `td` binary to render an existing input file
 
 This repository is not responsible for:
 
 - building or packaging the `td` executable itself
 - maintaining the upstream Topdrawer source tree
-- executing `td` or rewriting `.top` files
+- rewriting user-provided `.top` files in place
 - broad manual preprocessing beyond the currently agreed source-policy scope
 
 ## Data
@@ -68,6 +72,13 @@ From the repository root:
 uv run topdrawer-mcp
 ```
 
+To use `render_topdrawer_file`, install `td` and Ghostscript (`gs`) so both are
+available on `PATH`. You can override the `td` executable path with:
+
+```bash
+TD_EXECUTABLE_PATH=/path/to/td uv run topdrawer-mcp
+```
+
 VS Code starts the server through:
 
 ```text
@@ -90,6 +101,33 @@ Input:
 
 `limit` defaults to `5` and is clamped to `1..20`. `context_lines` defaults to
 `2` and is clamped to `0..10`.
+
+### `render_topdrawer_file`
+
+Input:
+
+```json
+{
+  "input_path": "examples/error-bars.top",
+  "output_path": "/tmp/output.png",
+  "overwrite": false
+}
+```
+
+`input_path` may be absolute or current-working-directory-relative.
+`output_path` is optional; when omitted, the server writes to a unique PNG path
+under the system temp directory. `overwrite` defaults to `false`.
+
+Example Topdrawer input:
+
+```text
+set symbol 1P
+set order y x dx dy
+100 1 0.5 10
+144 2 0.5 12
+196 3 0.5 14
+plot
+```
 
 ## Test
 

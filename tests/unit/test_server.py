@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 from topdrawer_mcp import server
@@ -83,3 +85,12 @@ def test_search_manual_reports_missing_manual(monkeypatch: pytest.MonkeyPatch, t
 
 def test_create_server_returns_fastmcp_server():
     assert server.create_server() is not None
+
+
+def test_create_server_registers_search_and_render_tools():
+    tool_names = {
+        tool.name for tool in asyncio.run(server.create_server().list_tools())
+    }
+
+    assert "search_manual" in tool_names
+    assert "render_topdrawer_file" in tool_names
