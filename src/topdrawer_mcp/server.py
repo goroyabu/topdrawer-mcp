@@ -9,6 +9,7 @@ from mcp.server.fastmcp import FastMCP
 
 from topdrawer_mcp.render import RenderResult
 from topdrawer_mcp.render import render_topdrawer_input
+from topdrawer_mcp.render import render_topdrawer_source_text
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -140,11 +141,37 @@ def render_topdrawer_file(
     )
 
 
+def render_topdrawer_script(
+    script: str,
+    base_dir: str | None = None,
+    output_path: str | None = None,
+    overwrite: bool = False,
+) -> RenderResult:
+    """Render an inline Topdrawer script into a PNG image.
+
+    Args:
+        script: Topdrawer script text to render.
+        base_dir: Optional directory used for relative include/input references.
+        output_path: Optional PNG output path. Defaults to a unique system temp path.
+        overwrite: Whether an existing output file may be replaced.
+    """
+    if not script.strip():
+        raise ValueError("script must be a non-empty string")
+
+    return render_topdrawer_source_text(
+        script,
+        base_dir=base_dir,
+        output_path=output_path,
+        overwrite=overwrite,
+    )
+
+
 def create_server() -> FastMCP:
     """Create the MCP server and register its tools."""
     server = FastMCP("topdrawer-mcp")
     server.add_tool(search_manual)
     server.add_tool(render_topdrawer_file, structured_output=True)
+    server.add_tool(render_topdrawer_script, structured_output=True)
     return server
 
 

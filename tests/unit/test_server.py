@@ -94,3 +94,40 @@ def test_create_server_registers_search_and_render_tools():
 
     assert "search_manual" in tool_names
     assert "render_topdrawer_file" in tool_names
+    assert "render_topdrawer_script" in tool_names
+
+
+def test_render_topdrawer_script_rejects_empty_script():
+    with pytest.raises(ValueError, match="script must be a non-empty string"):
+        server.render_topdrawer_script("   ")
+
+
+def test_render_topdrawer_script_uses_shared_render_core(monkeypatch: pytest.MonkeyPatch):
+    captured = {}
+
+    def fake_render(source_text: str, **kwargs):
+        captured["source_text"] = source_text
+        captured["kwargs"] = kwargs
+        return {
+            "output_path": "/tmp/render.png",
+            "td_executable": "/bin/td",
+            "success": True,
+            "message": "ok",
+        }
+
+    monkeypatch.setattr(server, "render_topdrawer_source_text", fake_render)
+
+    result = server.render_topdrawer_script(
+        "plot\n",
+        base_dir="samples",
+        output_path="out.png",
+        overwrite=True,
+    )
+
+    assert captured["source_text"] == "plot\n"
+    assert captured["kwargs"] == {
+        "base_dir": "samples",
+        "output_path": "out.png",
+        "overwrite": True,
+    }
+    assert result["success"] is True
