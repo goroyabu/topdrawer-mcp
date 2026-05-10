@@ -1,0 +1,39 @@
+{
+  "entries": [
+    {
+      "aliases": [],
+      "command": "BARGRAPH",
+      "kind": "command",
+      "section": "15.10"
+    },
+    {
+      "aliases": [],
+      "command": "HISTOGRAM",
+      "kind": "command",
+      "section": "15.40"
+    },
+    {
+      "aliases": [],
+      "command": "TITLE",
+      "kind": "command",
+      "section": "15.72"
+    },
+    {
+      "aliases": [],
+      "command": "CASE",
+      "kind": "modifier",
+      "parent_command": "TITLE",
+      "section": "15.72.16"
+    },
+    {
+      "aliases": [
+        "SYMBOL"
+      ],
+      "command": "SET SYMBOL",
+      "kind": "set-subcommand",
+      "parent_command": "SET",
+      "section": "15.64.56"
+    }
+  ],
+  "schema_version": 1
+}

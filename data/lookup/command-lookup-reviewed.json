@@ -1,0 +1,181 @@
+{
+  "entries": [
+    {
+      "command": "BARGRAPH",
+      "important_rules": [
+        "Uses Y for bar height.",
+        "Uses DX for half width.",
+        "DY is ignored.",
+        "If POINTS is omitted, all current data points are used."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "SETS=[FROM] n1 [TO] [n2]",
+            "SELECT=\"name\"",
+            "POINTS=[FROM] n1 [TO] [n2]",
+            "SLICES [X|Y|Z] [FROM] v1 [[TO] v2]"
+          ],
+          "name": "selection"
+        },
+        {
+          "items": [
+            "CYCLE[=ON|OFF]",
+            "INTENSITY|WIDTH=n",
+            "WHITE|RED|GREEN|BLUE|YELLOW|MAGENTA|CYAN",
+            "SOLID|DOTS|DASHES|DAASHES|DOTDASH|PATTERNED|FUNNY|SPACE"
+          ],
+          "name": "style"
+        },
+        {
+          "items": [
+            "X",
+            "Y",
+            "Z",
+            "BLOCK|LEGO",
+            "HIDE[=ON|OFF]",
+            "FRAME[=ON|OFF]",
+            "DEPTH[=ON|OFF]",
+            "XY|YZ|ZX",
+            "CROSS|RANDOM"
+          ],
+          "name": "3d"
+        }
+      ],
+      "summary": "Draws a bar graph from the current data."
+    },
+    {
+      "command": "HISTOGRAM",
+      "important_rules": [
+        "For normal data, Y sets the height and DX sets the half width of each bin.",
+        "For mesh data, HISTOGRAM can produce block or Lego style 3-d plots.",
+        "Selection options determine which sets, points, lines, rows, or slices are included."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "SETS=[FROM] n1 [TO] [n2]",
+            "SELECT=\"name\"",
+            "POINTS|COLUMNS [FROM] n1 [TO] n2",
+            "LINES|ROWS [FROM] n1 [TO] n2",
+            "SLICES [X|Y|Z] [FROM] v1 [TO] v2"
+          ],
+          "name": "selection"
+        },
+        {
+          "items": [
+            "CYCLE[=ON|OFF]",
+            "LIMITED [FROM] [x,y,z|CURSOR] [TO] [x,y,z|CURSOR]",
+            "INTENSITY|WIDTH=n",
+            "WHITE|RED|GREEN|BLUE|YELLOW|MAGENTA|CYAN",
+            "SOLID|DOTS|DASHES|DAASHES|DOTDASH|PATTERNED|FUNNY|SPACE"
+          ],
+          "name": "style"
+        },
+        {
+          "items": [
+            "X",
+            "Y",
+            "Z",
+            "BLOCK|LEGO",
+            "HIDE[=ON|OFF]",
+            "FRAME[=ON|OFF]",
+            "DEPTH[=ON|OFF]",
+            "XY|YZ|ZX",
+            "CROSS|RANDOM"
+          ],
+          "name": "3d"
+        }
+      ],
+      "summary": "Draws the current data as a histogram or, for mesh data, a block-style plot."
+    },
+    {
+      "command": "TITLE",
+      "important_rules": [
+        "The title text must be enclosed in apostrophes or quotes.",
+        "If no position or TOP/BOTTOM/LEFT/RIGHT option is given, the next title is placed below the most recent title.",
+        "CASE modifies only the immediately preceding string."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "x, [y, [z]]|CURSOR",
+            "TOP|BOTTOM|RIGHT|LEFT|X|Y|Z|GENERAL",
+            "DATA|XDATA|YDATA|TEXT"
+          ],
+          "name": "placement"
+        },
+        {
+          "items": [
+            "LJUSTIFY|CENTER|RJUSTIFY",
+            "LINES=n",
+            "SIZE=n",
+            "ANGLE=n",
+            "SPACES=n",
+            "INDEX=n",
+            "DIGITS=n"
+          ],
+          "name": "format"
+        },
+        {
+          "items": [
+            "TIME",
+            "lexicals",
+            "CASE 'case modifier string'",
+            "INTENSITY|WIDTH=n",
+            "WHITE|RED|GREEN|BLUE|YELLOW|MAGENTA|CYAN"
+          ],
+          "name": "content"
+        }
+      ],
+      "summary": "Puts free-form text on the plot using text, data, or axis-relative coordinates."
+    },
+    {
+      "command": "CASE",
+      "important_rules": [
+        "CASE must be the next command after TITLE or MORE, or appear on the same line as TITLE.",
+        "It modifies only the immediately preceding string.",
+        "It must immediately follow the target string on the same line or the next line."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "CASE 'case_text'"
+          ],
+          "name": "syntax"
+        }
+      ],
+      "summary": "Controls the character case or font modifiers for the preceding TITLE or MORE string."
+    },
+    {
+      "command": "SET SYMBOL",
+      "important_rules": [
+        "If no parameters are specified, SET SYMBOL behaves like SET SYMBOL=NONE SIZE=2.",
+        "The second character selects the case or font to use.",
+        "Only symbols 0O through 9O are guaranteed to be centered."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "\"xx\"",
+            "NONE",
+            "DOT"
+          ],
+          "name": "symbol"
+        },
+        {
+          "items": [
+            "SIZE=n",
+            "THETA=n",
+            "PHI=n",
+            "ANGLE=n",
+            "PERMANENT"
+          ],
+          "name": "options"
+        }
+      ],
+      "summary": "Sets the default plot symbol and related orientation or size options."
+    }
+  ],
+  "schema_version": 1
+}
