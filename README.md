@@ -7,6 +7,7 @@ The server exposes MCP tools for manual search, render, and sample metadata
 discovery:
 
 - `search_manual` for case-insensitive substring search with line-numbered snippets
+- `lookup_command` for structured command guidance by canonical name or unique alias
 - `render_topdrawer_file` for rendering an existing Topdrawer input file to PNG
 - `render_topdrawer_script` for rendering inline Topdrawer script text to PNG
 - `list_manual_samples` for listing curated sample metadata with optional filters
@@ -171,6 +172,20 @@ PostScript BoundingBox with small padding.
 Use `render_topdrawer_script` when the caller has inline Topdrawer text, chat
 data that the agent converts into a script, or a script variant that does not
 need to be saved as a persistent `.top` file first.
+
+### `lookup_command`
+
+Input:
+
+```json
+{
+  "command": "SYMBOL"
+}
+```
+
+Looks up one reviewed command-guidance entry by canonical command name or a
+unique alias. This tool returns structured command metadata only. Use
+`search_manual` for free-text manual search.
 
 ### `list_manual_samples`
 
