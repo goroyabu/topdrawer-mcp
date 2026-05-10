@@ -7,6 +7,8 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[3]
 DEFAULT_DOC_SOURCE_PATH = ROOT_DIR / "data" / "raw" / "topdrawer.doc"
 DEFAULT_INDEX_DIR = ROOT_DIR / "data" / "index"
+DEFAULT_LOOKUP_TARGETS_PATH = ROOT_DIR / "data" / "lookup" / "command-lookup-targets.json"
+DEFAULT_LOOKUP_REVIEWED_PATH = ROOT_DIR / "data" / "lookup" / "command-lookup-reviewed.json"
 DOC_SOURCE_ENV_VAR = "TOPDRAWER_DOC_SOURCE_PATH"
 
 
