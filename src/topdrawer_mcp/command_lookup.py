@@ -1,13 +1,21 @@
 from __future__ import annotations
 
+from functools import lru_cache
 import json
 from pathlib import Path
 from typing import Literal
 from typing import TypedDict
 
+from topdrawer_mcp.preprocess.lookup import build_command_lookup_entries
+from topdrawer_mcp.preprocess.lookup import load_command_lookup_targets
+from topdrawer_mcp.preprocess.lookup import load_reviewed_command_lookup_entries
+from topdrawer_mcp.preprocess.sources import DEFAULT_LOOKUP_REVIEWED_PATH
+from topdrawer_mcp.preprocess.sources import DEFAULT_LOOKUP_TARGETS_PATH
+
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_COMMAND_LOOKUP_INDEX_PATH = ROOT_DIR / "data" / "index" / "command-lookup-index.json"
+DEFAULT_COMMAND_LOOKUP_MANUAL_PATH = ROOT_DIR / "data" / "topdrawer.txt"
 VALID_COMMAND_LOOKUP_KINDS = frozenset({"command", "modifier", "set-subcommand"})
 
 
@@ -49,16 +57,22 @@ class CommandLookupIndex(TypedDict):
 
 
 def load_command_lookup_index(
-    path: Path = DEFAULT_COMMAND_LOOKUP_INDEX_PATH,
+    path: Path | None = None,
 ) -> CommandLookupIndex:
-    """Load the reviewed command lookup index from JSON."""
-    data = json.loads(path.read_text(encoding="utf-8"))
-    return data
+    """Load the reviewed command lookup index.
+
+    When `path` is provided, read the JSON payload directly. When omitted, build
+    the runtime index from tracked sources in the repository.
+    """
+    if path is not None:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data
+    return _build_runtime_command_lookup_index()
 
 
 def lookup_command_entry(
     command: str,
-    path: Path = DEFAULT_COMMAND_LOOKUP_INDEX_PATH,
+    path: Path | None = None,
 ) -> CommandLookupEntry:
     """Resolve one command or unique alias from the lookup index."""
     normalized_query = _normalize_command_name(command)
@@ -83,6 +97,28 @@ def lookup_command_entry(
     if len(alias_matches) > 1:
         raise ValueError(f"Ambiguous command alias: {command.strip()!r}")
     raise ValueError(f"Unknown command lookup entry: {command.strip()!r}")
+
+
+@lru_cache(maxsize=1)
+def _build_runtime_command_lookup_index() -> CommandLookupIndex:
+    source_text = DEFAULT_COMMAND_LOOKUP_MANUAL_PATH.read_text(
+        encoding="utf-8",
+        errors="replace",
+    )
+    targets = load_command_lookup_targets(DEFAULT_LOOKUP_TARGETS_PATH)
+    reviewed_entries = load_reviewed_command_lookup_entries(DEFAULT_LOOKUP_REVIEWED_PATH)
+    entries = [entry.to_json() for entry in build_command_lookup_entries(source_text, targets, reviewed_entries)]
+    index: CommandLookupIndex = {
+        "schema_version": 1,
+        "source_name": (
+            "data/topdrawer.txt + data/lookup/command-lookup-targets.json + "
+            "data/lookup/command-lookup-reviewed.json"
+        ),
+        "entry_count": len(entries),
+        "entries": entries,
+    }
+    validate_command_lookup_index(index)
+    return index
 
 
 def validate_command_lookup_index(index: CommandLookupIndex) -> None:

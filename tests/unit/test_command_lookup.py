@@ -55,6 +55,13 @@ def test_load_command_lookup_index_reads_valid_payload(tmp_path):
     assert loaded["entries"][0]["command"] == "BARGRAPH"
 
 
+def test_load_command_lookup_index_builds_default_runtime_payload():
+    loaded = load_command_lookup_index()
+
+    assert loaded["entry_count"] >= 5
+    assert any(entry["command"] == "TITLE" for entry in loaded["entries"])
+
+
 def test_validate_command_lookup_index_rejects_invalid_kind():
     with pytest.raises(ValueError, match="invalid command lookup kind"):
         validate_command_lookup_index(_index_payload([_entry(kind="unknown")]))
