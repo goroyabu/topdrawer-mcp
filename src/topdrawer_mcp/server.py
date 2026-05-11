@@ -7,6 +7,8 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
+from topdrawer_mcp.command_lookup import CommandLookupEntry
+from topdrawer_mcp.command_lookup import lookup_command_entry
 from topdrawer_mcp.render import RenderResult
 from topdrawer_mcp.render import render_topdrawer_input
 from topdrawer_mcp.render import render_topdrawer_source_text
@@ -199,6 +201,11 @@ def get_manual_sample(sample_id: str) -> SampleCatalogEntry:
     return get_sample_catalog_entry(sample_id)
 
 
+def lookup_command(command: str) -> CommandLookupEntry:
+    """Return one structured command guidance entry by canonical name or unique alias."""
+    return lookup_command_entry(command)
+
+
 def create_server() -> FastMCP:
     """Create the MCP server and register its tools."""
     server = FastMCP("topdrawer-mcp")
@@ -207,6 +214,7 @@ def create_server() -> FastMCP:
     server.add_tool(render_topdrawer_script, structured_output=True)
     server.add_tool(list_manual_samples, structured_output=True)
     server.add_tool(get_manual_sample, structured_output=True)
+    server.add_tool(lookup_command, structured_output=True)
     return server
 
 

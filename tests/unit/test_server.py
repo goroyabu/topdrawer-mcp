@@ -97,6 +97,7 @@ def test_create_server_registers_search_and_render_tools():
     assert "render_topdrawer_script" in tool_names
     assert "list_manual_samples" in tool_names
     assert "get_manual_sample" in tool_names
+    assert "lookup_command" in tool_names
 
 
 def test_render_topdrawer_script_rejects_empty_script():
@@ -156,3 +157,25 @@ def test_get_manual_sample_returns_structured_entry():
 
     assert result["id"] == "scatter-error-bars"
     assert result["category"] == "scatter"
+
+
+def test_lookup_command_returns_title_entry():
+    result = server.lookup_command("TITLE")
+
+    assert result["command"] == "TITLE"
+    assert result["section"] == "15.72"
+
+
+def test_lookup_command_resolves_symbol_alias():
+    result = server.lookup_command("SYMBOL")
+
+    assert result["command"] == "SET SYMBOL"
+    assert result["kind"] == "set-subcommand"
+
+
+def test_lookup_command_returns_case_modifier_entry():
+    result = server.lookup_command("CASE")
+
+    assert result["command"] == "CASE"
+    assert result["kind"] == "modifier"
+    assert result["parent_command"] == "TITLE"

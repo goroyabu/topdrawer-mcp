@@ -72,6 +72,7 @@ def test_inspector_lists_search_manual(write_manual):
     assert "render_topdrawer_script" in names
     assert "list_manual_samples" in names
     assert "get_manual_sample" in names
+    assert "lookup_command" in names
 
 
 def test_inspector_calls_search_manual(write_manual):
@@ -142,6 +143,44 @@ def test_inspector_calls_get_manual_sample(write_manual):
     structured = response["structuredContent"]
     assert structured["id"] == "scatter-error-bars"
     assert structured["category"] == "scatter"
+
+
+def test_inspector_calls_lookup_command_title(write_manual):
+    manual_path = write_manual("BARGRAPH command\n")
+
+    response = _run_inspector(
+        manual_path,
+        "--method",
+        "tools/call",
+        "--tool-name",
+        "lookup_command",
+        "--tool-arg",
+        "command=TITLE",
+    )
+
+    assert response["isError"] is False
+    structured = response["structuredContent"]
+    assert structured["command"] == "TITLE"
+    assert structured["section"] == "15.72"
+
+
+def test_inspector_calls_lookup_command_symbol_alias(write_manual):
+    manual_path = write_manual("BARGRAPH command\n")
+
+    response = _run_inspector(
+        manual_path,
+        "--method",
+        "tools/call",
+        "--tool-name",
+        "lookup_command",
+        "--tool-arg",
+        "command=SYMBOL",
+    )
+
+    assert response["isError"] is False
+    structured = response["structuredContent"]
+    assert structured["command"] == "SET SYMBOL"
+    assert structured["kind"] == "set-subcommand"
 
 
 def test_inspector_calls_render_topdrawer_file(write_manual, tmp_path: Path):
