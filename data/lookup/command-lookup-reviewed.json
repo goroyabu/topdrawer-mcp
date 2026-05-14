@@ -94,6 +94,11 @@
       "important_rules": [
         "The title text must be enclosed in apostrophes or quotes.",
         "If no position or TOP/BOTTOM/LEFT/RIGHT option is given, the next title is placed below the most recent title.",
+        "TOP, BOTTOM, LEFT, and RIGHT titles are automatically centered.",
+        "If x, y, and z are all specified, the data frame is assumed unless overridden by TEXT, DATA, XDATA, or YDATA.",
+        "DIGITS=n controls lexical formatting and defaults to 4 when omitted.",
+        "CURSOR is an interactive placement mode.",
+        "X, Y, and Z are axis-relative in 3-D plots, and synonyms for LEFT, BOTTOM, and TOP in 2-D plots.",
         "CASE modifies only the immediately preceding string."
       ],
       "option_groups": [
@@ -121,21 +126,28 @@
           "items": [
             "TIME",
             "lexicals",
-            "CASE 'case modifier string'",
+            "CASE 'case modifier string'"
+          ],
+          "name": "content"
+        },
+        {
+          "items": [
             "INTENSITY|WIDTH=n",
             "WHITE|RED|GREEN|BLUE|YELLOW|MAGENTA|CYAN"
           ],
-          "name": "content"
+          "name": "appearance"
         }
       ],
-      "summary": "Puts free-form text on the plot using text, data, or axis-relative coordinates."
+      "summary": "Puts free-form text on the plot using text, data, or axis-relative coordinates, and can include lexical values or the current date/time."
     },
     {
       "command": "CASE",
       "important_rules": [
         "CASE must be the next command after TITLE or MORE, or appear on the same line as TITLE.",
         "It modifies only the immediately preceding string.",
-        "It must immediately follow the target string on the same line or the next line."
+        "It must immediately follow the target string on the same line or the next line.",
+        "case_text is a per-character modifier string defined by the FONTS section.",
+        "The documented example uses G to select lower-case Greek letters."
       ],
       "option_groups": [
         {
@@ -150,31 +162,44 @@
     {
       "command": "SET SYMBOL",
       "important_rules": [
-        "If no parameters are specified, SET SYMBOL behaves like SET SYMBOL=NONE SIZE=2.",
+        "If no parameters are specified, SET SYMBOL behaves like SET SYMBOL=NONE SIZE=2, and the symbol angles are turned off.",
+        "SET SYMBOL provides the default symbol only for plotted data that do not already have a symbol.",
+        "If SET SYMBOL is issued before reading data, the symbol is assumed for the data being read.",
+        "DOT and \"  \" both produce a dot.",
+        "NONE disables the symbol.",
         "The second character selects the case or font to use.",
-        "Only symbols 0O through 9O are guaranteed to be centered."
+        "Only symbols 0O through 9O are guaranteed to be centered.",
+        "Negative SIZE values are adjusted automatically by the window size.",
+        "ANGLE, THETA, and PHI control symbol orientation for 3-d plots.",
+        "PERMANENT makes the current symbol survive NEW PLOT resets."
       ],
       "option_groups": [
         {
           "items": [
             "\"xx\"",
             "NONE",
-            "DOT"
+            "DOT",
+            "\"  \""
           ],
-          "name": "symbol"
+          "name": "symbol selection"
         },
         {
           "items": [
             "SIZE=n",
             "THETA=n",
             "PHI=n",
-            "ANGLE=n",
+            "ANGLE=n"
+          ],
+          "name": "size and orientation"
+        },
+        {
+          "items": [
             "PERMANENT"
           ],
-          "name": "options"
+          "name": "persistence"
         }
       ],
-      "summary": "Sets the default plot symbol and related orientation or size options."
+      "summary": "Sets the default symbol for plotted data that do not already have a symbol, including size and optional 3-d orientation controls."
     }
   ],
   "schema_version": 1
