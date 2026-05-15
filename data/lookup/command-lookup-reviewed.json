@@ -6,21 +6,23 @@
         "Uses Y for bar height.",
         "Uses DX for half width.",
         "DY is ignored.",
-        "If POINTS is omitted, all current data points are used."
+        "If POINTS is omitted, all current data points are used.",
+        "If no texture option is specified, the bar texture comes from the current default."
       ],
       "option_groups": [
         {
           "items": [
+            "EXPAND",
             "SETS=[FROM] n1 [TO] [n2]",
             "SELECT=\"name\"",
             "POINTS=[FROM] n1 [TO] [n2]",
-            "SLICES [X|Y|Z] [FROM] v1 [[TO] v2]"
+            "SLICES [X|Y|Z] [FROM] v1 [[TO] v2]",
+            "CYCLE[=ON|OFF]"
           ],
           "name": "selection"
         },
         {
           "items": [
-            "CYCLE[=ON|OFF]",
             "INTENSITY|WIDTH=n",
             "WHITE|RED|GREEN|BLUE|YELLOW|MAGENTA|CYAN",
             "SOLID|DOTS|DASHES|DAASHES|DOTDASH|PATTERNED|FUNNY|SPACE"
@@ -42,30 +44,41 @@
           "name": "3d"
         }
       ],
-      "summary": "Draws a bar graph from the current data."
+      "summary": "Draws a simple bar graph with bars centered on x values, using Y for height and DX for half width."
     },
     {
       "command": "HISTOGRAM",
       "important_rules": [
+        "Bin edges are taken halfway between adjacent error-bar ends (DX), or halfway between adjacent points when no error bars are present.",
         "For normal data, Y sets the height and DX sets the half width of each bin.",
         "For mesh data, HISTOGRAM can produce block or Lego style 3-d plots.",
-        "Selection options determine which sets, points, lines, rows, or slices are included."
+        "Selection options determine which sets, points, lines, rows, or slices are included.",
+        "EXPAND only affects the plot when POINTS, SETS, or SLICES are selected, or when mesh limits have been set."
       ],
       "option_groups": [
         {
           "items": [
+            "EXPAND[=ON|OFF]",
             "SETS=[FROM] n1 [TO] [n2]",
             "SELECT=\"name\"",
             "POINTS|COLUMNS [FROM] n1 [TO] n2",
             "LINES|ROWS [FROM] n1 [TO] n2",
-            "SLICES [X|Y|Z] [FROM] v1 [TO] v2"
+            "SLICES [X|Y|Z] [FROM] v1 [TO] v2",
+            "LIMITED [FROM] [x,y,z|CURSOR] [TO] [x,y,z|CURSOR]",
+            "CYCLE[=ON|OFF]"
           ],
           "name": "selection"
         },
         {
           "items": [
-            "CYCLE[=ON|OFF]",
-            "LIMITED [FROM] [x,y,z|CURSOR] [TO] [x,y,z|CURSOR]",
+            "TITLE[=ON|OFF]",
+            "FILL[=ON|OFF]",
+            "HIDE[=ON|OFF]"
+          ],
+          "name": "plot controls"
+        },
+        {
+          "items": [
             "INTENSITY|WIDTH=n",
             "WHITE|RED|GREEN|BLUE|YELLOW|MAGENTA|CYAN",
             "SOLID|DOTS|DASHES|DAASHES|DOTDASH|PATTERNED|FUNNY|SPACE"
@@ -78,16 +91,16 @@
             "Y",
             "Z",
             "BLOCK|LEGO",
-            "HIDE[=ON|OFF]",
             "FRAME[=ON|OFF]",
             "DEPTH[=ON|OFF]",
+            "GRID[=ON|OFF]",
             "XY|YZ|ZX",
             "CROSS|RANDOM"
           ],
           "name": "3d"
         }
       ],
-      "summary": "Draws the current data as a histogram or, for mesh data, a block-style plot."
+      "summary": "Draws a histogram from the selected data points; bin edges are inferred from adjacent DX error bars or, when no error bars are present, halfway between adjacent points."
     },
     {
       "command": "TITLE",
