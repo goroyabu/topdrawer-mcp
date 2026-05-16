@@ -14,6 +14,39 @@
     },
     {
       "aliases": [],
+      "command": "JOIN",
+      "kind": "command",
+      "section": "15.44"
+    },
+    {
+      "aliases": [],
+      "command": "PLOT",
+      "kind": "command",
+      "section": "15.58"
+    },
+    {
+      "aliases": [],
+      "command": "SET GRID",
+      "kind": "set-subcommand",
+      "parent_command": "SET",
+      "section": "15.64.30"
+    },
+    {
+      "aliases": [],
+      "command": "SET LIMITS",
+      "kind": "set-subcommand",
+      "parent_command": "SET",
+      "section": "15.64.35"
+    },
+    {
+      "aliases": [],
+      "command": "SET WINDOW",
+      "kind": "set-subcommand",
+      "parent_command": "SET",
+      "section": "15.64.65"
+    },
+    {
+      "aliases": [],
       "command": "TITLE",
       "kind": "command",
       "section": "15.72"

@@ -103,6 +103,268 @@
       "summary": "Draws a histogram from the selected data points; bin edges are inferred from adjacent DX error bars or, when no error bars are present, halfway between adjacent points."
     },
     {
+      "command": "JOIN",
+      "important_rules": [
+        "SPLINE uses a natural cubic spline and requires either x or y to be strictly increasing.",
+        "GENERAL supports repeated points and multivalued functions, and is the default fit mode.",
+        "TEXT uses the text coordinate frame instead of the data frame.",
+        "EXPAND only affects the plot when POINTS, SETS, or SLICES are selected, or when mesh limits have been set.",
+        "FILL assumes the curve is closed from the last point back to the first point, disables spline/general fitting, and forces the effective level to 1.",
+        "HIDE defaults to ON for mesh plots and OFF for normal data plots."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "POINTS|COLUMNS=[FROM] n1 [TO] [n2]",
+            "LINES|ROWS=[FROM] n1 [TO] [n2]",
+            "SETS=[FROM] n1 [TO] [n2]",
+            "SELECT=\"name\"",
+            "LIMITED [VLOG[=ON|OFF]] [[FROM]|TO [[X=]nx,[[Y=]ny[,[Z=]nz]]] [RECURSOR] [CURSOR]]",
+            "SLICES [X|Y|Z] [FROM] v1 [[TO] v2]",
+            "TITLE[=ON|OFF]",
+            "CYCLE[=ON|OFF]"
+          ],
+          "name": "selection"
+        },
+        {
+          "items": [
+            "[LEVEL=]n",
+            "SPLINE|GENERAL",
+            "TEXT",
+            "EXPAND[=ON|OFF]",
+            "FILL[=ON|OFF]"
+          ],
+          "name": "fit and frame"
+        },
+        {
+          "items": [
+            "INTENSITY|WIDTH=n",
+            "WHITE|RED|GREEN|BLUE|YELLOW|MAGENTA|CYAN",
+            "SOLID|DOTS|DASHES|DAASHES|DOTDASH|PATTERNED|FUNNY|SPACE",
+            "HIDE[=ON|OFF]"
+          ],
+          "name": "style"
+        },
+        {
+          "items": [
+            "X|Y|Z",
+            "ERROR[=ON|OFF]"
+          ],
+          "name": "mesh/3d"
+        }
+      ],
+      "summary": "Connects data points with line segments, optionally using spline or general curve fitting."
+    },
+    {
+      "command": "PLOT",
+      "important_rules": [
+        "PLOT AXES and PLOT GRID do not plot data points.",
+        "If PLOT AXES or PLOT GRID is used before PLOT, HISTOGRAM, or JOIN, the later automatic axes are not produced.",
+        "3-d plots do not automatically produce axes, so PLOT AXES is required when axes are needed.",
+        "EXPAND only affects the plot when POINTS, SETS, or SLICES are selected, or when mesh limits have been set.",
+        "FILL fills plotted symbols, but many symbols do not fill well and the result depends on the chosen symbol."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "POINTS|COLUMNS=[FROM] n1 [TO] [n2]",
+            "LINES|ROWS=[FROM] n1 [TO] [n2]",
+            "SETS=[FROM] n1 [TO] [n2]",
+            "SELECT=\"name\"",
+            "SLICES [X|Y|Z] [FROM] v1 [[TO] v2]",
+            "LIMITED [VLOG[=ON|OFF]] [[FROM]|TO [[X=]nx,[[Y=]ny[,[Z=]nz]]] [CURSOR]]",
+            "TITLE[=ON|OFF]",
+            "EXPAND[=ON|OFF]"
+          ],
+          "name": "selection"
+        },
+        {
+          "items": [
+            "[NO]SYMBOL[=sym]",
+            "SIZE=n",
+            "[X|Y|Z]ERRORS[=ON|OFF]",
+            "FILL[=ON|OFF]",
+            "VECTOR[=ON|OFF]"
+          ],
+          "name": "data plot"
+        },
+        {
+          "items": [
+            "[NO]RANDOM[=n]",
+            "VARIABLE[=ON|OFF]",
+            "COUNTS"
+          ],
+          "name": "mesh/scatter"
+        },
+        {
+          "items": [
+            "AXES",
+            "GRID",
+            "OUTLINE",
+            "TABLE"
+          ],
+          "name": "non-data"
+        },
+        {
+          "items": [
+            "CYCLE[=ON|OFF]",
+            "INTENSITY|WIDTH=n",
+            "WHITE|RED|GREEN|BLUE|YELLOW|MAGENTA|CYAN",
+            "SOLID|DOTS|DASHES|DAASHES|DOTDASH|PATTERNED|FUNNY|SPACE"
+          ],
+          "name": "style"
+        }
+      ],
+      "summary": "Plots data points as symbols with error bars, and can also add non-data elements such as axes, grids, outlines, or numeric tables."
+    },
+    {
+      "command": "SET GRID",
+      "important_rules": [
+        "SET GRID only affects the current plot unless PERMANENT is specified.",
+        "SET GRID must be followed by HIST, JOIN, BARGRAPH, or PLOT to take effect.",
+        "Default grid color and texture follow the axes unless they are overridden explicitly.",
+        "SYMBOL[=sym] draws symbols at grid intersections, with 0O as the default symbol."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "ON|OFF",
+            "Y|HORIZONTAL",
+            "X|VERTICAL",
+            "Z",
+            "XY|YZ|ZX"
+          ],
+          "name": "enable and direction"
+        },
+        {
+          "items": [
+            "SYMBOL[=sym]",
+            "SIZE=n",
+            "THETA=n",
+            "PHI=n",
+            "ANGLE=n"
+          ],
+          "name": "symbol"
+        },
+        {
+          "items": [
+            "CYCLE[=ON|OFF]",
+            "OUTLINE[=ON|OFF]",
+            "INTENSITY|WIDTH=n",
+            "NOCOLOR|WHITE|RED|GREEN|BLUE|YELLOW|MAGENTA|CYAN",
+            "NOTEXTURE|SOLID|DOTS|DASHES|DAASHES|DOTDASH|PATTERNED|FUNNY|SPACE"
+          ],
+          "name": "style"
+        },
+        {
+          "items": [
+            "YZ[=ON|OFF]",
+            "ZX[=ON|OFF]"
+          ],
+          "name": "3d"
+        },
+        {
+          "items": [
+            "PERMANENT"
+          ],
+          "name": "persistence"
+        }
+      ],
+      "summary": "Configures a grid overlay for later axes drawing, including optional intersection symbols and 3-d grid planes."
+    },
+    {
+      "command": "SET LIMITS",
+      "important_rules": [
+        "Limits define the drawing space, but do not necessarily filter which data points are plotted.",
+        "SET LIMITS should be used before the first PLOT, JOIN, HIST, or BARGRAPH command.",
+        "If SET LIMITS is issued with no limits specified, all currently set limits are removed.",
+        "Changing limits between overlaid plots changes their scales.",
+        "SCALE n1 [TO n2] forces a uniform X,Y scale within the current window.",
+        "PERMANENT keeps the current limits until the next SET LIMIT command."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "X [FROM] x [TO] x",
+            "Y [FROM] y [TO] y",
+            "Z [FROM] z [TO] z",
+            "XMIN=x",
+            "XMAX=x",
+            "YMIN=y",
+            "YMAX=y",
+            "ZMIN=z",
+            "ZMAX=z"
+          ],
+          "name": "direct limits"
+        },
+        {
+          "items": [
+            "FROM [X=]nx,[[Y=]ny,[[Z=]nz]] TO [X=]nx,[[Y=]ny,[[Z=]nz]]"
+          ],
+          "name": "range syntax"
+        },
+        {
+          "items": [
+            "SCALE n1 [[TO] n2]"
+          ],
+          "name": "scale"
+        },
+        {
+          "items": [
+            "CURSOR",
+            "PERMANENT"
+          ],
+          "name": "interactive and persistence"
+        }
+      ],
+      "summary": "Sets the drawing limits for the current plot independently of the data, including direct axis limits, coordinate ranges, and uniform X,Y scaling."
+    },
+    {
+      "command": "SET WINDOW",
+      "important_rules": [
+        "Absolute windows use physical plot coordinates in inches and may not exceed the current plot SIZE.",
+        "SET WINDOW supports absolute, numbered, and relative window selection modes.",
+        "Positive relative windows reserve room for labels and titles, so the actual plot area is smaller than the nominal subdivision.",
+        "Negative relative windows occupy the full specified area and are useful for tightly aligned panel layouts.",
+        "INSIDE, OUTSIDE, and LEVEL=n create nested window levels.",
+        "Changing the window between overlaid plots changes their scales."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "X [FROM] n1 [TO] n2",
+            "Y [FROM] n1 [TO] n2",
+            "FROM nx,ny TO nx,ny",
+            "AT n1 [SIZE] n2",
+            "AT nx,ny [SIZE] nx,ny"
+          ],
+          "name": "absolute"
+        },
+        {
+          "items": [
+            "{FIRST|LAST|NEXT|PREVIOUS|n1 [OF n2]}",
+            "{X|Y} n1 [OF n2]"
+          ],
+          "name": "numbered and relative"
+        },
+        {
+          "items": [
+            "LEVEL=n",
+            "INSIDE",
+            "OUTSIDE"
+          ],
+          "name": "nesting"
+        },
+        {
+          "items": [
+            "CURSOR"
+          ],
+          "name": "interactive"
+        }
+      ],
+      "summary": "Selects the current plotting region using absolute physical window coordinates or subdivided numbered/relative windows."
+    },
+    {
       "command": "TITLE",
       "important_rules": [
         "The title text must be enclosed in apostrophes or quotes.",
