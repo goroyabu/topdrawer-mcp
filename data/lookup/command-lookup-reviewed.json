@@ -156,6 +156,23 @@
       "summary": "Connects data points with line segments, optionally using spline or general curve fitting."
     },
     {
+      "command": "MORE",
+      "important_rules": [
+        "MORE adds text after the most recent title using the same parameters as that title.",
+        "A matching CASE command may immediately follow MORE, just as it does after TITLE.",
+        "MORE is best understood as a TITLE companion command rather than a standalone layout command."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "MORE"
+          ],
+          "name": "syntax"
+        }
+      ],
+      "summary": "Adds more text after the last title, reusing the same placement and formatting parameters."
+    },
+    {
       "command": "PLOT",
       "important_rules": [
         "PLOT AXES and PLOT GRID do not plot data points.",
@@ -273,6 +290,48 @@
       "summary": "Configures a grid overlay for later axes drawing, including optional intersection symbols and 3-d grid planes."
     },
     {
+      "command": "SET LABELS",
+      "important_rules": [
+        "SET LABELS only affects the current plot unless PERMANENT is specified.",
+        "If SET LABELS is issued with no parameters, the label settings reset to their original defaults.",
+        "The default label state is LEFT ON and BOTTOM ON.",
+        "INSIDE=OFF is useful with negative windows to suppress labels on adjacent interior axes.",
+        "CHARACTERS=n affects how much room windows reserve for left and right labels."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "ALL|TOP|BOTTOM|LEFT|RIGHT|X|Y|Z",
+            "ON|OFF",
+            "INSIDE[=ON|OFF]"
+          ],
+          "name": "sides and enable"
+        },
+        {
+          "items": [
+            "SIZE=n",
+            "CHARACTERS=n",
+            "SHIFT=n"
+          ],
+          "name": "size and spacing"
+        },
+        {
+          "items": [
+            "INTENSITY|WIDTH=n",
+            "NOCOLOR|WHITE|RED|GREEN|BLUE|YELLOW|MAGENTA|CYAN"
+          ],
+          "name": "style"
+        },
+        {
+          "items": [
+            "PERMANENT"
+          ],
+          "name": "persistence"
+        }
+      ],
+      "summary": "Controls numeric axis labels, including which sides show labels and how much space is reserved for them."
+    },
+    {
       "command": "SET LIMITS",
       "important_rules": [
         "Limits define the drawing space, but do not necessarily filter which data points are plotted.",
@@ -320,6 +379,56 @@
       "summary": "Sets the drawing limits for the current plot independently of the data, including direct axis limits, coordinate ranges, and uniform X,Y scaling."
     },
     {
+      "command": "SET SCALE",
+      "important_rules": [
+        "SET SCALE selects scale type and default tick/label generation, while SET LIMITS selects the plotted range.",
+        "The default scale state is ALL LINEAR LABELS=6 TICKS=5.",
+        "For linear scales, TICKS=1 means there are no unlabeled ticks.",
+        "LINEAR and LOGARITHMIC scales interpret LABELS and TICKS differently.",
+        "PERMANENT applies only to the current axis, and options to its right are not set permanently."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "X|Y|Z|ALL"
+          ],
+          "name": "axis selection"
+        },
+        {
+          "items": [
+            "LINEAR",
+            "[-]LOGARITHMIC",
+            "MONTHS",
+            "YEARS",
+            "DAYS|TIME|HOURS|MINUTES|SECONDS",
+            "POWER[=n]|ROOT[=n]",
+            "NORMAL [MEAN=x] [DEVIATION=s]",
+            "USER=[n1[,n2,...n10]]",
+            "BASE=n",
+            "REVERSE[=ON|OFF]"
+          ],
+          "name": "scale mode"
+        },
+        {
+          "items": [
+            "LABELS|TICKS=n [LONG|SHORT|NONE]",
+            "LABELS=n1,n2... [EXPONENTIAL[=ON|OFF]] [NONE]",
+            "TICKS=n1,n2... [LONG|SHORT|ALL|NONE]",
+            "DECADES=n",
+            "SUBTICKS=n"
+          ],
+          "name": "tick and label generation"
+        },
+        {
+          "items": [
+            "PERMANENT"
+          ],
+          "name": "persistence"
+        }
+      ],
+      "summary": "Selects axis scale modes and the default generation of labeled and unlabeled ticks."
+    },
+    {
       "command": "SET WINDOW",
       "important_rules": [
         "Absolute windows use physical plot coordinates in inches and may not exceed the current plot SIZE.",
@@ -363,6 +472,47 @@
         }
       ],
       "summary": "Selects the current plotting region using absolute physical window coordinates or subdivided numbered/relative windows."
+    },
+    {
+      "command": "SET TICKS",
+      "important_rules": [
+        "SET TICKS only affects the current plot unless PERMANENT is specified.",
+        "If SET TICKS is issued with no parameters, the tick settings reset to their original defaults.",
+        "The default tick state is ALL ON.",
+        "SIZE=n sets the small tick size in inches, with a default of 0.1.",
+        "LONG=n sets the ratio of long ticks to short ticks, with a default of 3."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "ALL|TOP|BOTTOM|RIGHT|LEFT|X|Y|Z",
+            "ON|OFF"
+          ],
+          "name": "sides and enable"
+        },
+        {
+          "items": [
+            "SIZE=n",
+            "LONG=n"
+          ],
+          "name": "geometry"
+        },
+        {
+          "items": [
+            "INTENSITY|WIDTH=n",
+            "NOCOLOR|WHITE|RED|GREEN|BLUE|YELLOW|MAGENTA|CYAN",
+            "NOTEXTURE|SOLID|DOTS|DASHES|DAASHES|DOTDASH|PATTERNED|FUNNY|SPACE"
+          ],
+          "name": "style"
+        },
+        {
+          "items": [
+            "PERMANENT"
+          ],
+          "name": "persistence"
+        }
+      ],
+      "summary": "Controls which axes show tick marks and how large those tick marks are."
     },
     {
       "command": "TITLE",

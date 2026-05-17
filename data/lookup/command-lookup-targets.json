@@ -20,6 +20,12 @@
     },
     {
       "aliases": [],
+      "command": "MORE",
+      "kind": "command",
+      "section": "15.48"
+    },
+    {
+      "aliases": [],
       "command": "PLOT",
       "kind": "command",
       "section": "15.58"
@@ -33,6 +39,13 @@
     },
     {
       "aliases": [],
+      "command": "SET LABELS",
+      "kind": "set-subcommand",
+      "parent_command": "SET",
+      "section": "15.64.34"
+    },
+    {
+      "aliases": [],
       "command": "SET LIMITS",
       "kind": "set-subcommand",
       "parent_command": "SET",
@@ -40,10 +53,24 @@
     },
     {
       "aliases": [],
+      "command": "SET SCALE",
+      "kind": "set-subcommand",
+      "parent_command": "SET",
+      "section": "15.64.49"
+    },
+    {
+      "aliases": [],
       "command": "SET WINDOW",
       "kind": "set-subcommand",
       "parent_command": "SET",
       "section": "15.64.65"
+    },
+    {
+      "aliases": [],
+      "command": "SET TICKS",
+      "kind": "set-subcommand",
+      "parent_command": "SET",
+      "section": "15.64.60"
     },
     {
       "aliases": [],
