@@ -9,6 +9,7 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_REFERENCE_DIR = ROOT_DIR / "data" / "reference"
 DEFAULT_SET_WINDOW_REFERENCE_PATH = DEFAULT_REFERENCE_DIR / "set-window-reference.json"
 DEFAULT_SYMBOL_CODE_REFERENCE_PATH = DEFAULT_REFERENCE_DIR / "symbol-codes.json"
+DEFAULT_TEXTURE_STYLE_REFERENCE_PATH = DEFAULT_REFERENCE_DIR / "texture-styles.json"
 
 
 class ReferenceEntry(TypedDict):
@@ -45,6 +46,21 @@ class SymbolCodeReference(TypedDict):
     rows: list[SymbolCodeRow]
 
 
+class TextureStyleRow(TypedDict):
+    """One texture keyword to rendered-style mapping row."""
+
+    keyword: str
+    rendered_style: str
+
+
+class TextureStyleReference(TypedDict):
+    """One tracked texture-style reference document."""
+
+    schema_version: int
+    topic: str
+    rows: list[TextureStyleRow]
+
+
 def load_reference_topic(path: Path) -> ReferenceTopic:
     """Load one repository-owned reference-data document from JSON."""
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -53,6 +69,14 @@ def load_reference_topic(path: Path) -> ReferenceTopic:
 
 def load_symbol_code_reference(path: Path = DEFAULT_SYMBOL_CODE_REFERENCE_PATH) -> SymbolCodeReference:
     """Load one repository-owned symbol-code reference document from JSON."""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return data
+
+
+def load_texture_style_reference(
+    path: Path = DEFAULT_TEXTURE_STYLE_REFERENCE_PATH,
+) -> TextureStyleReference:
+    """Load one repository-owned texture-style reference document from JSON."""
     data = json.loads(path.read_text(encoding="utf-8"))
     return data
 
@@ -111,6 +135,33 @@ def validate_symbol_code_reference(reference: SymbolCodeReference) -> None:
             raise ValueError(f"duplicate symbol code: {code}")
         seen_codes.add(code)
         _require_non_empty_string(row, "glyph")
+
+
+def validate_texture_style_reference(reference: TextureStyleReference) -> None:
+    """Validate the minimal schema for texture-style reference data."""
+    if reference.get("schema_version") != 1:
+        raise ValueError("texture style reference schema_version must be 1")
+
+    topic = _require_non_empty_string(reference, "topic")
+    if topic != "texture-styles":
+        raise ValueError(f"unexpected texture style reference topic: {topic!r}")
+
+    rows = reference.get("rows")
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("texture style reference must contain a non-empty rows list")
+
+    seen_keywords: set[str] = set()
+    expected_keys = {"keyword", "rendered_style"}
+    for row in rows:
+        if set(row) != expected_keys:
+            raise ValueError(
+                f"texture style reference row keys must be exactly {sorted(expected_keys)}"
+            )
+        keyword = _require_non_empty_string(row, "keyword")
+        if keyword in seen_keywords:
+            raise ValueError(f"duplicate texture keyword: {keyword}")
+        seen_keywords.add(keyword)
+        _require_non_empty_string(row, "rendered_style")
 
 
 def _require_non_empty_string(mapping: dict[str, object], key: str) -> str:
