@@ -9,6 +9,7 @@ discovery:
 - `search_manual` for case-insensitive substring search with line-numbered snippets
 - `lookup_command` for structured command guidance by canonical name or unique alias
 - `get_server_runtime_info` for resolved manual/render runtime configuration
+- `scan_topdrawer_script` for lightweight command scanning and simple rule checks
 - `render_topdrawer_file` for rendering an existing Topdrawer input file to PNG
 - `render_topdrawer_script` for rendering inline Topdrawer script text to PNG
 - `list_manual_samples` for listing curated sample metadata with optional filters
@@ -145,6 +146,22 @@ Returns structured read-only runtime information for:
 - the manual-search source path
 - the tracked command-lookup source files
 - the resolved `td` and `gs` executables used for rendering
+
+### `scan_topdrawer_script`
+
+Input:
+
+```json
+{
+  "script": "set window x 0 13 y 0 10\nset limits x 0 to 5 y 0 to 6\nplot axis\ntitle top \"Example\"\ncase \"GGGGGGG\"\nplot\n"
+}
+```
+
+Returns a structured first-pass scan of inline Topdrawer script text:
+
+- recognized covered commands with line numbers
+- command counts by normalized command name
+- lightweight rule checks, currently including `CASE` adjacency
 
 Example Topdrawer input:
 

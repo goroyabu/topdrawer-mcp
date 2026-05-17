@@ -99,6 +99,7 @@ def test_create_server_registers_search_and_render_tools():
     assert "get_manual_sample" in tool_names
     assert "lookup_command" in tool_names
     assert "get_server_runtime_info" in tool_names
+    assert "scan_topdrawer_script" in tool_names
 
 
 def test_render_topdrawer_script_rejects_empty_script():
@@ -217,3 +218,14 @@ def test_get_server_runtime_info_uses_runtime_info_helper(monkeypatch: pytest.Mo
     monkeypatch.setattr(server, "get_runtime_info", lambda: expected)
 
     assert server.get_server_runtime_info() == expected
+
+
+def test_scan_topdrawer_script_uses_script_scan_helper(monkeypatch: pytest.MonkeyPatch):
+    expected = {
+        "commands": [],
+        "summary": {"counts": {}},
+        "checks": [],
+    }
+    monkeypatch.setattr(server, "scan_topdrawer_script_text", lambda script: expected)
+
+    assert server.scan_topdrawer_script("plot\n") == expected
