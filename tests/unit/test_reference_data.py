@@ -77,3 +77,32 @@ def test_symbol_code_reference_contains_practical_subset():
     assert rows["0P"] == "+"
     assert rows["AP"] == "●"
     assert rows["AG"] == "α"
+
+
+def test_validate_texture_style_reference_accepts_repository_data():
+    reference = reference_data.load_texture_style_reference()
+
+    reference_data.validate_texture_style_reference(reference)
+
+
+def test_validate_texture_style_reference_rejects_duplicate_keywords():
+    reference = reference_data.load_texture_style_reference()
+    duplicate = deepcopy(reference)
+    duplicate["rows"].append(deepcopy(duplicate["rows"][0]))
+
+    with pytest.raises(ValueError, match="duplicate texture keyword"):
+        reference_data.validate_texture_style_reference(duplicate)
+
+
+def test_texture_style_reference_contains_verified_keyword_subset():
+    reference = reference_data.load_texture_style_reference()
+
+    rows = {row["keyword"]: row["rendered_style"] for row in reference["rows"]}
+    assert rows == {
+        "SOLID": "solid",
+        "DOTS": "dotted",
+        "DASHES": "short dashed",
+        "DAASHES": "long dashed",
+        "DOTDASH": "dot-dash",
+        "DOT DOT DASH": "dot-dot-dash",
+    }

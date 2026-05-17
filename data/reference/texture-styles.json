@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "topic": "texture-styles",
+  "rows": [
+    {
+      "keyword": "SOLID",
+      "rendered_style": "solid"
+    },
+    {
+      "keyword": "DOTS",
+      "rendered_style": "dotted"
+    },
+    {
+      "keyword": "DASHES",
+      "rendered_style": "short dashed"
+    },
+    {
+      "keyword": "DAASHES",
+      "rendered_style": "long dashed"
+    },
+    {
+      "keyword": "DOTDASH",
+      "rendered_style": "dot-dash"
+    },
+    {
+      "keyword": "DOT DOT DASH",
+      "rendered_style": "dot-dot-dash"
+    }
+  ]
+}
