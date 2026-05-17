@@ -79,7 +79,7 @@ def test_search_manual_reports_missing_manual(monkeypatch: pytest.MonkeyPatch, t
     monkeypatch.setenv("TOPDRAWER_MANUAL_PATH", str(missing))
     server._manual_for_path.cache_clear()
 
-    with pytest.raises(OSError, match="Unable to read manual text"):
+    with pytest.raises(OSError, match="get_server_runtime_info"):
         server.search_manual("anything")
 
 
@@ -98,6 +98,7 @@ def test_create_server_registers_search_and_render_tools():
     assert "list_manual_samples" in tool_names
     assert "get_manual_sample" in tool_names
     assert "lookup_command" in tool_names
+    assert "get_server_runtime_info" in tool_names
 
 
 def test_render_topdrawer_script_rejects_empty_script():
@@ -179,3 +180,40 @@ def test_lookup_command_returns_case_modifier_entry():
     assert result["command"] == "CASE"
     assert result["kind"] == "modifier"
     assert result["parent_command"] == "TITLE"
+
+
+def test_get_server_runtime_info_uses_runtime_info_helper(monkeypatch: pytest.MonkeyPatch):
+    expected = {
+        "manual": {
+            "env_var": "TOPDRAWER_MANUAL_PATH",
+            "configured_path": None,
+            "resolved_path": "/tmp/manual.txt",
+            "exists": True,
+            "source": "default",
+            "error": None,
+            "user_action": [],
+        },
+        "command_lookup_sources": [],
+        "render": {
+            "available": False,
+            "td": {
+                "env_var": "TD_EXECUTABLE_PATH",
+                "configured_path": None,
+                "resolved_path": None,
+                "available": False,
+                "error": "missing td",
+            },
+            "gs": {
+                "env_var": "GS_EXECUTABLE_PATH",
+                "configured_path": None,
+                "resolved_path": None,
+                "available": False,
+                "error": "missing gs",
+            },
+            "missing_requirements": ["td", "gs"],
+            "user_action": ["step 1", "step 2"],
+        },
+    }
+    monkeypatch.setattr(server, "get_runtime_info", lambda: expected)
+
+    assert server.get_server_runtime_info() == expected

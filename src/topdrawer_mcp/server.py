@@ -12,6 +12,8 @@ from topdrawer_mcp.command_lookup import lookup_command_entry
 from topdrawer_mcp.render import RenderResult
 from topdrawer_mcp.render import render_topdrawer_input
 from topdrawer_mcp.render import render_topdrawer_source_text
+from topdrawer_mcp.runtime_info import RuntimeInfoResult
+from topdrawer_mcp.runtime_info import get_runtime_info
 from topdrawer_mcp.sample_catalog import SampleCatalogEntry
 from topdrawer_mcp.sample_catalog import SampleCatalogListResult
 from topdrawer_mcp.sample_catalog import get_sample_catalog_entry
@@ -39,7 +41,8 @@ class ManualText:
             except OSError as exc:
                 raise OSError(
                     f"Unable to read manual text at {self.path}. "
-                    "Set TOPDRAWER_MANUAL_PATH or create data/topdrawer.txt."
+                    "Set TOPDRAWER_MANUAL_PATH or create data/topdrawer.txt. "
+                    "You can inspect the current runtime with get_server_runtime_info."
                 ) from exc
             self._lines = text.splitlines()
         return self._lines
@@ -206,6 +209,11 @@ def lookup_command(command: str) -> CommandLookupEntry:
     return lookup_command_entry(command)
 
 
+def get_server_runtime_info() -> RuntimeInfoResult:
+    """Return resolved runtime/config information for manual and render features."""
+    return get_runtime_info()
+
+
 def create_server() -> FastMCP:
     """Create the MCP server and register its tools."""
     server = FastMCP("topdrawer-mcp")
@@ -215,6 +223,7 @@ def create_server() -> FastMCP:
     server.add_tool(list_manual_samples, structured_output=True)
     server.add_tool(get_manual_sample, structured_output=True)
     server.add_tool(lookup_command, structured_output=True)
+    server.add_tool(get_server_runtime_info, structured_output=True)
     return server
 
 

@@ -8,6 +8,7 @@ discovery:
 
 - `search_manual` for case-insensitive substring search with line-numbered snippets
 - `lookup_command` for structured command guidance by canonical name or unique alias
+- `get_server_runtime_info` for resolved manual/render runtime configuration
 - `render_topdrawer_file` for rendering an existing Topdrawer input file to PNG
 - `render_topdrawer_script` for rendering inline Topdrawer script text to PNG
 - `list_manual_samples` for listing curated sample metadata with optional filters
@@ -86,15 +87,15 @@ uv run topdrawer-mcp
 ```
 
 To use `render_topdrawer_file`, install `td` and Ghostscript (`gs`) so both are
-available on `PATH`. You can override the `td` executable path with:
+available on `PATH`. You can override the executable paths with:
 
 ```bash
-TD_EXECUTABLE_PATH=/path/to/td uv run topdrawer-mcp
+TD_EXECUTABLE_PATH=/path/to/td GS_EXECUTABLE_PATH=/path/to/gs uv run topdrawer-mcp
 ```
 
 When running through an MCP client, pass `TOPDRAWER_MANUAL_PATH` and
-`TD_EXECUTABLE_PATH` through the client's environment configuration rather than
-editing repository defaults.
+`TD_EXECUTABLE_PATH` (and optionally `GS_EXECUTABLE_PATH`) through the client's
+environment configuration rather than editing repository defaults.
 
 VS Code starts the server through:
 
@@ -136,6 +137,14 @@ Input:
 under the system temp directory. `overwrite` defaults to `false`. PNG output is
 rendered with an opaque white background and trimmed to the PostScript
 BoundingBox with small padding.
+
+### `get_server_runtime_info`
+
+Returns structured read-only runtime information for:
+
+- the manual-search source path
+- the tracked command-lookup source files
+- the resolved `td` and `gs` executables used for rendering
 
 Example Topdrawer input:
 

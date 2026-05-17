@@ -56,7 +56,32 @@ def test_resolve_td_executable_rejects_non_executable_env_path(
 def test_resolve_gs_executable_raises_when_missing(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("PATH", "")
 
-    with pytest.raises(FileNotFoundError, match="Unable to find `gs` on PATH"):
+    with pytest.raises(FileNotFoundError, match="get_server_runtime_info"):
+        render.resolve_gs_executable()
+
+
+def test_resolve_gs_executable_prefers_environment(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    configured = tmp_path / "custom-gs"
+    fallback = tmp_path / "gs"
+    _make_executable(configured)
+    _make_executable(fallback)
+    monkeypatch.setenv(render.GS_EXECUTABLE_ENV, str(configured))
+    monkeypatch.setenv("PATH", str(tmp_path))
+
+    resolved = render.resolve_gs_executable()
+
+    assert resolved == configured.resolve()
+
+
+def test_resolve_gs_executable_rejects_non_executable_env_path(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+):
+    configured = tmp_path / "custom-gs"
+    configured.write_text("not executable\n", encoding="utf-8")
+    monkeypatch.setenv(render.GS_EXECUTABLE_ENV, str(configured))
+
+    with pytest.raises(PermissionError, match="non-executable file"):
         render.resolve_gs_executable()
 
 
