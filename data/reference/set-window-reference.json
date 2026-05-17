@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "topic": "set-window",
+  "command": "SET WINDOW",
+  "entries": [
+    {
+      "id": "absolute",
+      "title": "Absolute windows",
+      "summary": "Absolute SET WINDOW coordinates use physical plot coordinates in inches.",
+      "rules": [
+        "Absolute windows may not exceed the current plot SIZE.",
+        "The default plot SIZE is 13 by 10 inches.",
+        "Absolute windows do not automatically rescale labels, titles, symbols, or ticks to match window size."
+      ],
+      "examples": [
+        "SET WINDOW X FROM 1 TO 6 Y FROM 1.5 TO 9.0",
+        "SET WINDOW FROM 1,1.5 TO 6,9.0",
+        "SET WINDOW AT 3.5,5.25 SIZE=5,7.5"
+      ]
+    },
+    {
+      "id": "numbered",
+      "title": "Numbered windows",
+      "summary": "Numbered windows divide the entire screen into near-square panels and select one panel by number.",
+      "rules": [
+        "If n2 is omitted, the previous n2 for the current plot is reused.",
+        "Both n1 and n2 must be at least 1.0.",
+        "When a relative window is already in effect, numbered selection modifies only the integer part of that relative window."
+      ],
+      "examples": [
+        "SET WINDOW 1 OF 4",
+        "SET WINDOW 6 OF 6",
+        "SET WINDOW 5"
+      ]
+    },
+    {
+      "id": "relative",
+      "title": "Relative windows",
+      "summary": "Relative windows subdivide one axis of the current plot area and select one of the resulting regions.",
+      "rules": [
+        "Relative forms such as X n1 OF n2 and Y n1 OF n2 can be combined to build multi-panel layouts.",
+        "If n2 is omitted, the previous n2 for the current plot is reused.",
+        "Non-integral n1 and n2 values are valid and are used for fine adjustment."
+      ],
+      "examples": [
+        "SET WINDOW X 1 OF 2",
+        "SET WINDOW X 1 OF 2 Y 1 OF 2",
+        "SET WINDOW X 1.1 OF 3.2 Y 1.2 OF 2.4"
+      ]
+    },
+    {
+      "id": "positive-vs-negative",
+      "title": "Positive vs negative relative windows",
+      "summary": "Positive relative windows reserve room for labels and titles, while negative relative windows occupy the full specified area.",
+      "rules": [
+        "Positive relative windows shrink the actual plot area to leave room for labels and titles.",
+        "Negative relative windows occupy the entire specified area.",
+        "If you use negative windows, you may also need to turn off INSIDE labels with SET LABELS."
+      ],
+      "examples": [
+        "SET WINDOW Y 1.2 OF 2.5",
+        "SET WINDOW Y 1.2 OF -2.5",
+        "SET LABELS INSIDE=OFF"
+      ]
+    },
+    {
+      "id": "practical-notes",
+      "title": "Practical notes",
+      "summary": "SET WINDOW is often paired with SET LIMITS, but it controls layout position rather than data-space limits.",
+      "rules": [
+        "SET WINDOW and SET LIMITS are often paired, but they control different coordinate spaces.",
+        "If SET WINDOW is issued between two overlaid plots, they will not have the same scales.",
+        "For windows that do not occupy the entire space, the actual size depends on labels and titles."
+      ],
+      "examples": [
+        "SET WINDOW X 0 13 Y 0 10",
+        "SET LIMITS X 0 TO 13 Y 0 TO 10",
+        "SET WINDOW X 2.6 11.7 Y 2 9"
+      ]
+    }
+  ]
+}
