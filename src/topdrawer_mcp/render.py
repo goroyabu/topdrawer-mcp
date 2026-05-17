@@ -9,6 +9,7 @@ from typing import TypedDict
 
 
 TD_EXECUTABLE_ENV = "TD_EXECUTABLE_PATH"
+GS_EXECUTABLE_ENV = "GS_EXECUTABLE_PATH"
 TD_PS_FILENAME = "render.ps"
 TD_WRAPPER_FILENAME = "render.top"
 TD_ERROR_MARKERS = ("*** ERROR ***", "ERROR FOUND BY THE UNIFIED GRAPHICS SYSTEM")
@@ -43,17 +44,32 @@ def resolve_td_executable() -> Path:
     resolved = shutil.which("td")
     if resolved is None:
         raise FileNotFoundError(
-            "Unable to find `td` on PATH. Set TD_EXECUTABLE_PATH or install td."
+            "Unable to find `td` on PATH. Set TD_EXECUTABLE_PATH or install td. "
+            "You can inspect the current runtime with get_server_runtime_info."
         )
     return Path(resolved).resolve()
 
 
 def resolve_gs_executable() -> Path:
-    """Resolve the Ghostscript executable from PATH."""
+    """Resolve the Ghostscript executable from the environment or PATH."""
+    configured = os.environ.get(GS_EXECUTABLE_ENV)
+    if configured:
+        candidate = Path(configured).expanduser()
+        if not candidate.is_file():
+            raise FileNotFoundError(
+                f"{GS_EXECUTABLE_ENV} points to a missing file: {candidate}"
+            )
+        if not os.access(candidate, os.X_OK):
+            raise PermissionError(
+                f"{GS_EXECUTABLE_ENV} points to a non-executable file: {candidate}"
+            )
+        return candidate.resolve()
+
     resolved = shutil.which("gs")
     if resolved is None:
         raise FileNotFoundError(
-            "Unable to find `gs` on PATH. Install Ghostscript to convert PostScript to PNG."
+            "Unable to find `gs` on PATH. Set GS_EXECUTABLE_PATH or install Ghostscript to convert PostScript to PNG. "
+            "You can inspect the current runtime with get_server_runtime_info."
         )
     return Path(resolved).resolve()
 

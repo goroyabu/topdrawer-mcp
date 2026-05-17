@@ -73,6 +73,7 @@ def test_inspector_lists_search_manual(write_manual):
     assert "list_manual_samples" in names
     assert "get_manual_sample" in names
     assert "lookup_command" in names
+    assert "get_server_runtime_info" in names
 
 
 def test_inspector_calls_search_manual(write_manual):
@@ -181,6 +182,24 @@ def test_inspector_calls_lookup_command_symbol_alias(write_manual):
     structured = response["structuredContent"]
     assert structured["command"] == "SET SYMBOL"
     assert structured["kind"] == "set-subcommand"
+
+
+def test_inspector_calls_get_server_runtime_info(write_manual):
+    manual_path = write_manual("BARGRAPH command\n")
+
+    response = _run_inspector(
+        manual_path,
+        "--method",
+        "tools/call",
+        "--tool-name",
+        "get_server_runtime_info",
+    )
+
+    assert response["isError"] is False
+    structured = response["structuredContent"]
+    assert structured["manual"]["source"] == "env"
+    assert structured["manual"]["exists"] is True
+    assert "render" in structured
 
 
 def test_inspector_calls_render_topdrawer_file(write_manual, tmp_path: Path):
