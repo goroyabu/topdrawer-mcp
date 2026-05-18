@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
+from topdrawer_mcp import script_scan
+from topdrawer_mcp.script_scan import scan_topdrawer_script_file
 from topdrawer_mcp.script_scan import scan_topdrawer_script_text
 
 
@@ -118,6 +122,60 @@ def test_scan_topdrawer_script_ignores_non_command_lines_and_comments():
     assert result["checks"] == []
 
 
+def test_scan_topdrawer_script_recognizes_read_and_warns_for_unknown_set_subcommand():
+    result = scan_topdrawer_script_text(
+        "\n".join(
+            [
+                "read points",
+                "set gridd on",
+                "set label bottom off",
+            ]
+        )
+        + "\n"
+    )
+
+    assert result["commands"] == [
+        {
+            "line": 1,
+            "raw": "read points",
+            "normalized": "READ",
+            "kind": "command",
+        }
+    ]
+    assert result["summary"]["counts"] == {"READ": 1}
+    assert result["checks"] == [
+        {
+            "severity": "warning",
+            "line": 2,
+            "message": "Unknown SET subcommand: GRIDD.",
+        }
+    ]
+
+
+def test_scan_topdrawer_script_file_reads_and_scans_file(tmp_path: Path):
+    input_path = tmp_path / "sample.top"
+    input_path.write_text("set window x 0 13 y 0 10\nplot\n", encoding="utf-8")
+
+    result = scan_topdrawer_script_file(str(input_path))
+
+    assert result["summary"]["counts"] == {"PLOT": 1, "SET WINDOW": 1}
+    assert result["checks"] == []
+
+
+def test_known_set_subcommand_names_include_manual_and_alias_coverage():
+    names = script_scan._known_set_subcommand_names()
+
+    assert "WINDOWS" in names
+    assert "LABELS" in names
+    assert "ORDER" in names
+    assert "FONT" in names
+
+
 def test_scan_topdrawer_script_rejects_empty_script():
     with pytest.raises(ValueError, match="script must be a non-empty string"):
         scan_topdrawer_script_text("   ")
+
+
+def test_scan_topdrawer_script_file_rejects_empty_path():
+    with pytest.raises(ValueError, match="input_path must be a non-empty string"):
+        scan_topdrawer_script_file("   ")
