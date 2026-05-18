@@ -10,6 +10,7 @@ discovery:
 - `lookup_command` for structured command guidance by canonical name or unique alias
 - `get_server_runtime_info` for resolved manual/render runtime configuration
 - `scan_topdrawer_script` for lightweight command scanning and simple rule checks
+- `scan_topdrawer_file` for scanning an existing `.top` file on disk
 - `render_topdrawer_file` for rendering an existing Topdrawer input file to PNG
 - `render_topdrawer_script` for rendering inline Topdrawer script text to PNG
 - `list_manual_samples` for listing curated sample metadata with optional filters
@@ -162,6 +163,20 @@ Returns a structured first-pass scan of inline Topdrawer script text:
 - recognized covered commands with line numbers
 - command counts by normalized command name
 - lightweight rule checks, currently including `CASE` adjacency
+
+### `scan_topdrawer_file`
+
+Input:
+
+```json
+{
+  "input_path": "examples/sample.top"
+}
+```
+
+Returns the same structured first-pass scan as `scan_topdrawer_script`, but reads
+the script from an existing file path. This second-pass scanner also recognizes
+`READ` and warns on unknown `SET` subcommands such as `SET GRIDD`.
 
 Example Topdrawer input:
 

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections import Counter
 from functools import lru_cache
+from pathlib import Path
+import re
 from typing import Literal
 from typing import TypedDict
 
@@ -10,6 +12,11 @@ from topdrawer_mcp.command_lookup import load_command_lookup_index
 
 
 CheckSeverity = Literal["warning"]
+ROOT_DIR = Path(__file__).resolve().parents[2]
+DEFAULT_MANUAL_PATH = ROOT_DIR / "data" / "topdrawer.txt"
+_SET_HEADING_RE = re.compile(r"^\s*15\.64\.(\d+)\s+([A-Za-z_][A-Za-z0-9_ ]*)\s*$")
+_SUPPLEMENTAL_COMMANDS: tuple[tuple[str, CommandLookupKind], ...] = (("READ", "command"),)
+_SET_SUBCOMMAND_ALIASES = frozenset({"LABEL"})
 
 
 class ScannedCommand(TypedDict):
@@ -82,9 +89,28 @@ def scan_topdrawer_script_text(script: str) -> ScriptScanResult:
         substantive_lines.append((line_number, stripped, None))
 
     checks = _case_adjacency_checks(commands, substantive_lines)
+    checks.extend(_unknown_set_subcommand_checks(commands, substantive_lines))
     counts = Counter(command["normalized"] for command in commands)
     summary: ScriptScanSummary = {"counts": dict(sorted(counts.items()))}
     return {"commands": commands, "summary": summary, "checks": checks}
+
+
+def scan_topdrawer_script_file(input_path: str) -> ScriptScanResult:
+    """Scan one Topdrawer script file for known commands and simple rule issues."""
+    stripped_path = input_path.strip()
+    if not stripped_path:
+        raise ValueError("input_path must be a non-empty string")
+
+    candidate = Path(stripped_path).expanduser()
+    if not candidate.is_absolute():
+        candidate = Path.cwd() / candidate
+    resolved = candidate.resolve()
+
+    try:
+        script = resolved.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        raise OSError(f"Unable to read Topdrawer script file: {resolved}") from exc
+    return scan_topdrawer_script_text(script)
 
 
 @lru_cache(maxsize=1)
@@ -109,6 +135,21 @@ def _command_matchers() -> tuple[_CommandMatcher, ...]:
                     "token_count": len(normalized_name.split()),
                 }
             )
+
+    for name, kind in _SUPPLEMENTAL_COMMANDS:
+        normalized_name = _normalize_name(name)
+        key = (normalized_name, normalized_name)
+        if key in seen:
+            continue
+        seen.add(key)
+        matchers.append(
+            {
+                "name": name,
+                "normalized": normalized_name,
+                "kind": kind,
+                "token_count": len(normalized_name.split()),
+            }
+        )
 
     matchers.sort(key=lambda matcher: (-matcher["token_count"], matcher["name"]))
     return tuple(matchers)
@@ -163,6 +204,57 @@ def _case_adjacency_checks(
             )
 
     return checks
+
+
+def _unknown_set_subcommand_checks(
+    commands: list[ScannedCommand],
+    substantive_lines: list[tuple[int, str, ScannedCommand | None]],
+) -> list[ScriptScanCheck]:
+    command_by_line = {command["line"]: command for command in commands}
+    known_set_subcommands = _known_set_subcommand_names()
+    checks: list[ScriptScanCheck] = []
+
+    for line_number, raw, maybe_command in substantive_lines:
+        normalized_line = _normalize_name(raw)
+        if not normalized_line.startswith("SET "):
+            continue
+
+        if maybe_command is not None and maybe_command["kind"] == "set-subcommand":
+            continue
+
+        tokens = normalized_line.split()
+        if len(tokens) < 2:
+            continue
+
+        subcommand = tokens[1]
+        if subcommand in known_set_subcommands or subcommand in _SET_SUBCOMMAND_ALIASES:
+            continue
+
+        if maybe_command is not None and command_by_line.get(line_number) == maybe_command:
+            continue
+
+        checks.append(
+            {
+                "severity": "warning",
+                "line": line_number,
+                "message": f"Unknown SET subcommand: {subcommand}.",
+            }
+        )
+
+    return checks
+
+
+@lru_cache(maxsize=1)
+def _known_set_subcommand_names() -> frozenset[str]:
+    names: set[str] = set()
+    for line in DEFAULT_MANUAL_PATH.read_text(encoding="utf-8", errors="replace").splitlines():
+        match = _SET_HEADING_RE.match(line)
+        if not match:
+            continue
+        names.add(_normalize_name(match.group(2)).split()[0])
+    names.discard("INTRODUCTION")
+    names.discard("OPTIONS")
+    return frozenset(names)
 
 
 def _normalize_name(value: str) -> str:

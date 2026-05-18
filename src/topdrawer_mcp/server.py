@@ -19,6 +19,7 @@ from topdrawer_mcp.sample_catalog import SampleCatalogListResult
 from topdrawer_mcp.sample_catalog import get_sample_catalog_entry
 from topdrawer_mcp.sample_catalog import list_sample_catalog_entries
 from topdrawer_mcp.script_scan import ScriptScanResult
+from topdrawer_mcp.script_scan import scan_topdrawer_script_file
 from topdrawer_mcp.script_scan import scan_topdrawer_script_text
 
 
@@ -221,6 +222,11 @@ def scan_topdrawer_script(script: str) -> ScriptScanResult:
     return scan_topdrawer_script_text(script)
 
 
+def scan_topdrawer_file(input_path: str) -> ScriptScanResult:
+    """Scan one Topdrawer script file for known commands and simple rule issues."""
+    return scan_topdrawer_script_file(input_path)
+
+
 def create_server() -> FastMCP:
     """Create the MCP server and register its tools."""
     server = FastMCP("topdrawer-mcp")
@@ -232,6 +238,7 @@ def create_server() -> FastMCP:
     server.add_tool(lookup_command, structured_output=True)
     server.add_tool(get_server_runtime_info, structured_output=True)
     server.add_tool(scan_topdrawer_script, structured_output=True)
+    server.add_tool(scan_topdrawer_file, structured_output=True)
     return server
 
 
