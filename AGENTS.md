@@ -54,6 +54,31 @@ outside that scope.
 - Verify claims about passing behavior with actual command output before
   reporting success.
 
+## GitHub Write Operations
+
+- Treat GitHub MCP as read-only and use `gh` CLI for GitHub write operations.
+- When creating or editing issue bodies, pull request bodies, or long comments,
+  do not embed the full body directly in shell arguments.
+- Write the intended Markdown content to a local temporary file first, then use
+  the file-based `gh` option where available such as `--body-file`.
+- If a `gh` subcommand does not accept a body file for the final action, post
+  the long comment first from a temporary file and then run the final command
+  separately.
+
+## Issue And Superpowers Boundaries
+
+- Treat GitHub issues as concrete repository tasks, bugs, or operational
+  problems that are specific enough to act on directly.
+- Do not keep broad roadmap, requirements-analysis, or design-exploration
+  topics open as GitHub issues when they are not yet concrete tasks.
+- Capture roadmap, design, and requirements material in
+  `docs/superpowers/specs/`.
+- A Superpowers spec does not need to be implementation-ready. It may record
+  roadmap intent, requirements analysis, or design questions when that is the
+  correct current maturity level.
+- Promote work from spec space into issue or plan space only when the task
+  becomes concrete enough to implement or verify independently.
+
 ## Change Discipline
 
 - Prefer narrow, reviewable changes over large undocumented rewrites.
