@@ -105,6 +105,49 @@ That implies:
 - do expand preprocessing when a specific runtime tool requires a missing,
   stable artifact
 
+## Entry Granularity Policy
+
+Structured lookup entries should follow the manual's documented
+section/subsection boundaries.
+
+- A command or modifier gets its own lookup entry only when it appears as its
+  own manual section or subsection.
+- Phrases that are documented only inside a parent command section should not
+  become standalone lookup entries.
+- When such a phrase matters for sample-scoped guidance, its behavior should be
+  documented under the parent command's reviewed guidance instead.
+- If a parent command does not yet have a lookup entry, the parent entry may be
+  introduced first, but only with reviewed content justified by the currently
+  targeted subsection scope.
+
+Under this rule, `SET POLAR` qualifies as its own entry because it has a
+documented subsection, while `PLOT AXES`, `PLOT TITLE`, and `TITLE DATA` do
+not qualify as standalone entries.
+
+## Deferred Topic: Command Abbreviation Support
+
+The Topdrawer manual allows commands and options to be abbreviated to the
+shortest unique form, with commands generally abbreviable to three
+characters.
+
+The current runtime `lookup_command` surface does not implement general
+abbreviation resolution. It resolves canonical command names plus a small
+curated alias set only.
+
+General abbreviation support is deferred because it would require design work
+around:
+
+- how abbreviation forms are generated and stored
+- how ambiguous abbreviations are detected and reported
+- whether abbreviation support should apply to commands only or also to
+  modifiers and set-subcommands
+- how this behavior interacts with curated aliases and command naming policy
+
+Until that work is designed, abbreviation-like support should be added only as
+explicit curated aliases when justified by a concrete workflow need.
+
+The current `DELETE` work intentionally does not add `DEL` alias support yet.
+
 ## Candidate Next Tasks
 
 These are the first candidates that could be promoted into standalone issues:

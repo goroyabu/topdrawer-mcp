@@ -47,6 +47,37 @@
       "summary": "Draws a simple bar graph with bars centered on x values, using Y for height and DX for half width."
     },
     {
+      "command": "DELETE",
+      "important_rules": [
+        "DELETE removes selected data points from the current data, and deleting every point in a set deletes the whole set and renumbers later sets.",
+        "ALL deletes all current data points.",
+        "One of ALL, POINTS, SETS, or LIMITED must be specified.",
+        "POINTS and SETS may be combined with LIMITED to delete only part of the selected data range.",
+        "For mesh data, LIMITED and POINTS are not legal options in the same way they are for regular data.",
+        "CONFIRM and LOG control interactive confirmation and reporting of deleted points.",
+        "The manual also documents histogram deletion, but this reviewed entry intentionally focuses on the DATA subsection used by current samples."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "ALL",
+            "POINTS=[FROM] n1 [TO] [n2]",
+            "SETS=[FROM] n1 [TO] [n2]",
+            "LIMITED [VLOG[=ON|OFF]] [[FROM]|TO [[X=]nx,[[Y=]ny[,[Z=]nz]]] [RECURSOR] [CURSOR]"
+          ],
+          "name": "data selection"
+        },
+        {
+          "items": [
+            "CONFIRM[=ON|OFF]",
+            "LOG[=ON|OFF]"
+          ],
+          "name": "interactive and reporting"
+        }
+      ],
+      "summary": "Deletes selected data points or whole data sets from the current data."
+    },
+    {
       "command": "HISTOGRAM",
       "important_rules": [
         "Bin edges are taken halfway between adjacent error-bar ends (DX), or halfway between adjacent points when no error bars are present.",
@@ -175,9 +206,13 @@
     {
       "command": "PLOT",
       "important_rules": [
+        "PLOT AXES and PLOT GRID are documented as PLOT behaviors rather than standalone command sections, so structured lookup keeps them under PLOT.",
         "PLOT AXES and PLOT GRID do not plot data points.",
         "If PLOT AXES or PLOT GRID is used before PLOT, HISTOGRAM, or JOIN, the later automatic axes are not produced.",
         "3-d plots do not automatically produce axes, so PLOT AXES is required when axes are needed.",
+        "Polar-style plotting may also require a follow-up PLOT AXES because axes are not always generated automatically.",
+        "Sample phrases such as PLOT TITLE should be interpreted through PLOT options rather than as standalone commands.",
+        "TITLE[=ON|OFF] controls whether plot-generated titles are shown when plotting selected data.",
         "EXPAND only affects the plot when POINTS, SETS, or SLICES are selected, or when mesh limits have been set.",
         "FILL fills plotted symbols, but many symbols do not fill well and the result depends on the chosen symbol."
       ],
@@ -189,9 +224,7 @@
             "SETS=[FROM] n1 [TO] [n2]",
             "SELECT=\"name\"",
             "SLICES [X|Y|Z] [FROM] v1 [[TO] v2]",
-            "LIMITED [VLOG[=ON|OFF]] [[FROM]|TO [[X=]nx,[[Y=]ny[,[Z=]nz]]] [CURSOR]]",
-            "TITLE[=ON|OFF]",
-            "EXPAND[=ON|OFF]"
+            "LIMITED [VLOG[=ON|OFF]] [[FROM]|TO [[X=]nx,[[Y=]ny[,[Z=]nz]]] [CURSOR]]"
           ],
           "name": "selection"
         },
@@ -199,9 +232,7 @@
           "items": [
             "[NO]SYMBOL[=sym]",
             "SIZE=n",
-            "[X|Y|Z]ERRORS[=ON|OFF]",
-            "FILL[=ON|OFF]",
-            "VECTOR[=ON|OFF]"
+            "[X|Y|Z]ERRORS[=ON|OFF]"
           ],
           "name": "data plot"
         },
@@ -212,6 +243,15 @@
             "COUNTS"
           ],
           "name": "mesh/scatter"
+        },
+        {
+          "items": [
+            "TITLE[=ON|OFF]",
+            "EXPAND[=ON|OFF]",
+            "FILL[=ON|OFF]",
+            "VECTOR[=ON|OFF]"
+          ],
+          "name": "plot controls"
         },
         {
           "items": [
@@ -233,6 +273,34 @@
         }
       ],
       "summary": "Plots data points as symbols with error bars, and can also add non-data elements such as axes, grids, outlines, or numeric tables."
+    },
+    {
+      "command": "SET FONT",
+      "important_rules": [
+        "SET FONT remains in effect until another SET FONT command changes the current font.",
+        "EXTENDED and DUPLEX both use proportional spacing, so text width depends on the chosen font.",
+        "DUPLEX appears repeatedly in manual samples as a display precondition for later titles, annotations, and symbol/text showcase plots.",
+        "SET FONT affects later title and annotation appearance rather than the interpretation of plotted data."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "BASIC",
+            "EXTENDED",
+            "DUPLEX"
+          ],
+          "name": "font selection"
+        },
+        {
+          "items": [
+            "affects later TITLE and annotation commands",
+            "remains active until changed",
+            "EXTENDED and DUPLEX use proportional spacing"
+          ],
+          "name": "usage notes"
+        }
+      ],
+      "summary": "Selects the font family used for subsequent titles, annotations, and other text-bearing plot elements."
     },
     {
       "command": "SET GRID",
@@ -379,6 +447,69 @@
       "summary": "Sets the drawing limits for the current plot independently of the data, including direct axis limits, coordinate ranges, and uniform X,Y scaling."
     },
     {
+      "command": "SET ORDER",
+      "important_rules": [
+        "SET ORDER changes how later data rows are interpreted until another SET ORDER or a NEW PLOT resets the current order.",
+        "The listed field names determine which input columns are treated as X, Y, error values, symbols, or other supported roles.",
+        "DUMMY can be used to skip columns that should be ignored while still selecting a later column from the same input row.",
+        "Manual samples use SET ORDER both to attach DX/DY error bars to points and to treat a later column as the plotted symbol code.",
+        "In multi-column input, SET ORDER can select one column as Y and another later column as X while ignoring the columns in between."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "X",
+            "Y",
+            "DX",
+            "DY",
+            "SYMBOL",
+            "DUMMY[=n]"
+          ],
+          "name": "column roles"
+        },
+        {
+          "items": [
+            "SET ORDER X Y",
+            "SET ORDER X Y DX DY",
+            "SET ORDER X Y SYMBOL",
+            "SET ORDER Y DUMMY DUMMY DUMMY DUMMY X"
+          ],
+          "name": "sample-style patterns"
+        }
+      ],
+      "summary": "Controls how subsequent input columns are interpreted as x/y values, error terms, symbols, or ignored placeholder fields."
+    },
+    {
+      "command": "SET POLAR",
+      "important_rules": [
+        "SET POLAR switches later plotting and related operations to polar coordinates, using R and THETA in place of X and Y.",
+        "The angle representation defaults to DEGREES, but can be changed to RADIANS, GRAD, PERCENT, or FULLCIRCLE=n.",
+        "PERMANENT keeps the chosen polar settings until they are changed again.",
+        "When polar coordinates are on, axes are not generated automatically; the manual explicitly calls out PLOT AXES as a follow-up command when axes are needed.",
+        "The manual notes that this feature is not fully implemented, including limit-setting behavior that still uses X/Y/Z coordinates."
+      ],
+      "option_groups": [
+        {
+          "items": [
+            "ON|OFF",
+            "DEGREES",
+            "RADIANS",
+            "GRAD",
+            "PERCENT",
+            "FULLCIRCLE=n"
+          ],
+          "name": "mode and angle representation"
+        },
+        {
+          "items": [
+            "PERMANENT"
+          ],
+          "name": "persistence"
+        }
+      ],
+      "summary": "Enables or disables polar coordinate plotting and selects how angular values are represented for subsequent operations."
+    },
+    {
       "command": "SET SCALE",
       "important_rules": [
         "SET SCALE selects scale type and default tick/label generation, while SET LIMITS selects the plotted range.",
@@ -521,6 +652,10 @@
         "If no position or TOP/BOTTOM/LEFT/RIGHT option is given, the next title is placed below the most recent title.",
         "TOP, BOTTOM, LEFT, and RIGHT titles are automatically centered.",
         "If x, y, and z are all specified, the data frame is assumed unless overridden by TEXT, DATA, XDATA, or YDATA.",
+        "TITLE DATA means both x and y are interpreted in the data coordinate frame, making it the direct way to place an annotation at a plotted data location.",
+        "TITLE TEXT keeps both coordinates in the text frame, while XDATA and YDATA mix one data-frame coordinate with one text-frame coordinate.",
+        "TITLE DATA is a TITLE placement/frame choice rather than a separate command family.",
+        "Sample annotations that look like TITLE DATA x,y ... should therefore be interpreted through TITLE placement behavior.",
         "DIGITS=n controls lexical formatting and defaults to 4 when omitted.",
         "CURSOR is an interactive placement mode.",
         "X, Y, and Z are axis-relative in 3-D plots, and synonyms for LEFT, BOTTOM, and TOP in 2-D plots.",

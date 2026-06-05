@@ -255,7 +255,7 @@ def _extract_syntax_lines(text: str, command: str, title: str) -> list[str]:
         stripped = line.strip()
         if not stripped:
             if syntax_lines:
-                continue
+                break
             continue
         if not saw_heading and SECTION_HEADING_RE.match(stripped):
             saw_heading = True
@@ -268,8 +268,13 @@ def _extract_syntax_lines(text: str, command: str, title: str) -> list[str]:
         if syntax_lines and GROUP_LABEL_RE.match(stripped):
             continue
         if syntax_lines:
-            break
-    return syntax_lines
+            if SECTION_HEADING_RE.match(stripped):
+                break
+            if not _looks_like_syntax_continuation(stripped):
+                break
+            syntax_lines.append(stripped)
+            continue
+    return _normalize_syntax_lines(syntax_lines)
 
 
 def _trim_blank_lines(lines: list[str]) -> list[str]:
@@ -280,6 +285,23 @@ def _trim_blank_lines(lines: list[str]) -> list[str]:
     while end > start and not lines[end - 1].strip():
         end -= 1
     return lines[start:end]
+
+
+def _looks_like_syntax_continuation(line: str) -> bool:
+    return any(token in line for token in ("[", "]", "{", "}", "|", "="))
+
+
+def _normalize_syntax_lines(lines: list[str]) -> list[str]:
+    if len(lines) <= 1:
+        return lines
+
+    normalized: list[str] = [lines[0]]
+    for line in lines[1:]:
+        if line.startswith("["):
+            normalized.append(line)
+            continue
+        normalized[-1] = f"{normalized[-1]}{line}".strip()
+    return normalized
 
 
 def _is_syntax_line(stripped: str, command: str) -> bool:
