@@ -169,6 +169,14 @@ def test_lookup_command_returns_title_entry():
     assert result["section"] == "15.72"
 
 
+def test_lookup_command_returns_delete_entry():
+    result = server.lookup_command("DELETE")
+
+    assert result["command"] == "DELETE"
+    assert result["kind"] == "command"
+    assert result["section"] == "15.19"
+
+
 def test_lookup_command_resolves_symbol_alias():
     result = server.lookup_command("SYMBOL")
 
@@ -182,6 +190,41 @@ def test_lookup_command_returns_case_modifier_entry():
     assert result["command"] == "CASE"
     assert result["kind"] == "modifier"
     assert result["parent_command"] == "TITLE"
+
+
+def test_lookup_command_returns_set_order_entry():
+    result = server.lookup_command("SET ORDER")
+
+    assert result["command"] == "SET ORDER"
+    assert result["kind"] == "set-subcommand"
+    assert result["parent_command"] == "SET"
+
+
+def test_lookup_command_returns_set_font_entry():
+    result = server.lookup_command("SET FONT")
+
+    assert result["command"] == "SET FONT"
+    assert result["kind"] == "set-subcommand"
+    assert result["parent_command"] == "SET"
+
+
+def test_lookup_command_returns_set_polar_entry():
+    result = server.lookup_command("SET POLAR")
+
+    assert result["command"] == "SET POLAR"
+    assert result["kind"] == "set-subcommand"
+    assert result["parent_command"] == "SET"
+
+
+@pytest.mark.parametrize("command", ["PLOT AXIS", "PLOT TITLE", "TITLE DATA"])
+def test_lookup_command_rejects_non_standalone_phrases(command: str):
+    with pytest.raises(ValueError, match="Unknown command lookup entry"):
+        server.lookup_command(command)
+
+
+def test_lookup_command_rejects_delete_abbreviation():
+    with pytest.raises(ValueError, match="Unknown command lookup entry"):
+        server.lookup_command("DEL")
 
 
 def test_get_server_runtime_info_uses_runtime_info_helper(monkeypatch: pytest.MonkeyPatch):

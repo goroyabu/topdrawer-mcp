@@ -59,7 +59,21 @@ def test_load_command_lookup_index_builds_default_runtime_payload():
     loaded = load_command_lookup_index()
 
     assert loaded["entry_count"] >= 5
+    assert any(entry["command"] == "DELETE" for entry in loaded["entries"])
     assert any(entry["command"] == "TITLE" for entry in loaded["entries"])
+    assert any(entry["command"] == "SET ORDER" for entry in loaded["entries"])
+    assert any(entry["command"] == "SET FONT" for entry in loaded["entries"])
+    assert any(entry["command"] == "SET POLAR" for entry in loaded["entries"])
+
+
+def test_load_command_lookup_index_keeps_wrapped_set_order_syntax():
+    loaded = load_command_lookup_index()
+
+    set_order = next(entry for entry in loaded["entries"] if entry["command"] == "SET ORDER")
+
+    assert set_order["syntax_lines"] == [
+        "SET ORDER [[N][R|D]{X|THETA} [fctr]] [[N][R|D]{Y|RADIUS} [fctr]] [[N][R|D]{Z|PHI} [fctr]] [[N][R|D]U [fctr]] [[N][R|D]V [fctr]] [[N][R|D]W [fctr]] [SYMBOL] [DUMMY[=n]] [PACKED[=ON|OFF]] [PERMANENT]"
+    ]
 
 
 def test_validate_command_lookup_index_rejects_invalid_kind():

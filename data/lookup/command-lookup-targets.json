@@ -8,6 +8,12 @@
     },
     {
       "aliases": [],
+      "command": "DELETE",
+      "kind": "command",
+      "section": "15.19"
+    },
+    {
+      "aliases": [],
       "command": "HISTOGRAM",
       "kind": "command",
       "section": "15.40"
@@ -32,6 +38,13 @@
     },
     {
       "aliases": [],
+      "command": "SET FONT",
+      "kind": "set-subcommand",
+      "parent_command": "SET",
+      "section": "15.64.28"
+    },
+    {
+      "aliases": [],
       "command": "SET GRID",
       "kind": "set-subcommand",
       "parent_command": "SET",
@@ -50,6 +63,20 @@
       "kind": "set-subcommand",
       "parent_command": "SET",
       "section": "15.64.35"
+    },
+    {
+      "aliases": [],
+      "command": "SET ORDER",
+      "kind": "set-subcommand",
+      "parent_command": "SET",
+      "section": "15.64.39"
+    },
+    {
+      "aliases": [],
+      "command": "SET POLAR",
+      "kind": "set-subcommand",
+      "parent_command": "SET",
+      "section": "15.64.44"
     },
     {
       "aliases": [],
