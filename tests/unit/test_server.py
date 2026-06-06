@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 
 import pytest
 
@@ -101,6 +102,133 @@ def test_create_server_registers_search_and_render_tools():
     assert "get_server_runtime_info" in tool_names
     assert "scan_topdrawer_script" in tool_names
     assert "scan_topdrawer_file" in tool_names
+
+
+def test_create_server_registers_resources_and_prompts():
+    resource_uris = {
+        str(resource.uri) for resource in asyncio.run(server.create_server().list_resources())
+    }
+    template_uris = {
+        template.uriTemplate
+        for template in asyncio.run(server.create_server().list_resource_templates())
+    }
+    prompt_names = {
+        prompt.name for prompt in asyncio.run(server.create_server().list_prompts())
+    }
+
+    assert resource_uris == {"resource://commands/index"}
+    assert "resource://commands/{command}" in template_uris
+    assert "resource://commands/{parent}/{command}" in template_uris
+    assert "inspect_topdrawer_script" in prompt_names
+    assert "discover_topdrawer_command" in prompt_names
+
+
+def test_command_index_resource_returns_known_entries():
+    contents = list(
+        asyncio.run(
+            server.create_server().read_resource("resource://commands/index")
+        )
+    )
+
+    payload = json.loads(contents[0].content)
+
+    assert payload["entry_count"] >= 5
+    assert {"command", "kind", "section", "title", "uri"} <= set(payload["entries"][0].keys())
+    assert any(entry["command"] == "PLOT" for entry in payload["entries"])
+    assert any(entry["command"] == "TITLE" for entry in payload["entries"])
+    assert any(entry["command"] == "SET ORDER" for entry in payload["entries"])
+    assert any(entry["uri"] == "resource://commands/title" for entry in payload["entries"])
+    assert any(entry["uri"] == "resource://commands/set/order" for entry in payload["entries"])
+    assert any(entry["uri"] == "resource://commands/title/case" for entry in payload["entries"])
+
+
+def test_single_command_resource_returns_full_reviewed_entry():
+    contents = list(
+        asyncio.run(
+            server.create_server().read_resource("resource://commands/title")
+        )
+    )
+
+    payload = json.loads(contents[0].content)
+
+    assert payload["command"] == "TITLE"
+    assert payload["section"] == "15.72"
+    assert "summary" in payload
+    assert "raw_text" in payload
+
+
+def test_set_subcommand_resource_returns_full_reviewed_entry():
+    contents = list(
+        asyncio.run(
+            server.create_server().read_resource("resource://commands/set/order")
+        )
+    )
+
+    payload = json.loads(contents[0].content)
+
+    assert payload["command"] == "SET ORDER"
+    assert payload["kind"] == "set-subcommand"
+    assert payload["parent_command"] == "SET"
+
+
+def test_modifier_resource_returns_full_reviewed_entry():
+    contents = list(
+        asyncio.run(
+            server.create_server().read_resource("resource://commands/title/case")
+        )
+    )
+
+    payload = json.loads(contents[0].content)
+
+    assert payload["command"] == "CASE"
+    assert payload["kind"] == "modifier"
+    assert payload["parent_command"] == "TITLE"
+
+
+def test_single_command_resource_rejects_unknown_canonical_path():
+    with pytest.raises(ValueError, match="Unknown command lookup entry"):
+        list(
+            asyncio.run(
+                server.create_server().read_resource("resource://commands/missing")
+            )
+        )
+
+
+def test_inspect_topdrawer_script_prompt_returns_scan_lookup_flow():
+    result = asyncio.run(
+        server.create_server().get_prompt(
+            "inspect_topdrawer_script",
+            {"script_text": "plot\n", "goal": "understand the script"},
+        )
+    )
+
+    message_text = result.messages[0].content.text
+    assert "scan_topdrawer_script" in message_text
+    assert "lookup_command" in message_text
+    assert "search_manual" in message_text
+
+
+def test_inspect_topdrawer_script_prompt_requires_exactly_one_input_source():
+    with pytest.raises(ValueError, match="exactly one of script_text or input_path"):
+        asyncio.run(
+            server.create_server().get_prompt(
+                "inspect_topdrawer_script",
+                {"script_text": "plot\n", "input_path": "sample.top"},
+            )
+        )
+
+
+def test_discover_topdrawer_command_prompt_returns_search_lookup_flow():
+    result = asyncio.run(
+        server.create_server().get_prompt(
+            "discover_topdrawer_command",
+            {"query": "polar plot", "context": "user wants a polar chart"},
+        )
+    )
+
+    message_text = result.messages[0].content.text
+    assert "search_manual" in message_text
+    assert "lookup_command" in message_text
 
 
 def test_render_topdrawer_script_rejects_empty_script():
@@ -265,22 +393,14 @@ def test_get_server_runtime_info_uses_runtime_info_helper(monkeypatch: pytest.Mo
 
 
 def test_scan_topdrawer_script_uses_script_scan_helper(monkeypatch: pytest.MonkeyPatch):
-    expected = {
-        "commands": [],
-        "summary": {"counts": {}},
-        "checks": [],
-    }
+    expected = {"commands": []}
     monkeypatch.setattr(server, "scan_topdrawer_script_text", lambda script: expected)
 
     assert server.scan_topdrawer_script("plot\n") == expected
 
 
 def test_scan_topdrawer_file_uses_script_scan_file_helper(monkeypatch: pytest.MonkeyPatch):
-    expected = {
-        "commands": [],
-        "summary": {"counts": {}},
-        "checks": [],
-    }
+    expected = {"commands": []}
     monkeypatch.setattr(server, "scan_topdrawer_script_file", lambda path: expected)
 
     assert server.scan_topdrawer_file("example.top") == expected

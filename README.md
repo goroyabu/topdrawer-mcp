@@ -3,18 +3,31 @@
 Minimal MCP server for searching a local Topdrawer manual text file and
 rendering existing Topdrawer input files through an external `td` executable.
 
-The server exposes MCP tools for manual search, render, and sample metadata
-discovery:
+The server exposes MCP tools, resources, and prompts for manual search,
+command lookup, script inspection, and render workflows.
+
+Tools:
 
 - `search_manual` for case-insensitive substring search with line-numbered snippets
 - `lookup_command` for structured command guidance by canonical name or unique alias
 - `get_server_runtime_info` for resolved manual/render runtime configuration
-- `scan_topdrawer_script` for lightweight command scanning and simple rule checks
-- `scan_topdrawer_file` for scanning an existing `.top` file on disk
+- `scan_topdrawer_script` for extracting recognized commands from inline script text
+- `scan_topdrawer_file` for extracting recognized commands from an existing `.top` file
 - `render_topdrawer_file` for rendering an existing Topdrawer input file to PNG
 - `render_topdrawer_script` for rendering inline Topdrawer script text to PNG
 - `list_manual_samples` for listing curated sample metadata with optional filters
 - `get_manual_sample` for fetching one curated sample metadata entry by id
+
+Resources:
+
+- `resource://commands/index` for reviewed command discovery metadata
+- `resource://commands/{command}` for one reviewed top-level canonical command entry
+- `resource://commands/{parent}/{command}` for one reviewed nested canonical command entry
+
+Prompts:
+
+- `inspect_topdrawer_script` for reviewing an existing script with `scan_topdrawer_*`, `lookup_command`, and `search_manual`
+- `discover_topdrawer_command` for finding the most likely command from a phrase or user intent
 
 ## Scope
 
@@ -161,8 +174,7 @@ Input:
 Returns a structured first-pass scan of inline Topdrawer script text:
 
 - recognized covered commands with line numbers
-- command counts by normalized command name
-- lightweight rule checks, currently including `CASE` adjacency
+- normalized command names and command kinds
 
 ### `scan_topdrawer_file`
 
@@ -174,9 +186,8 @@ Input:
 }
 ```
 
-Returns the same structured first-pass scan as `scan_topdrawer_script`, but reads
-the script from an existing file path. This second-pass scanner also recognizes
-`READ` and warns on unknown `SET` subcommands such as `SET GRIDD`.
+Returns the same command-discovery scan as `scan_topdrawer_script`, but reads
+the script from an existing file path. The scanner also recognizes `READ`.
 
 Example Topdrawer input:
 
@@ -258,6 +269,68 @@ Input:
 
 Returns one curated sample metadata entry by id. This tool returns metadata
 only; sample script text remains out of scope for the current MCP surface.
+
+## MCP Resources
+
+### `resource://commands/index`
+
+Returns JSON discovery metadata for all reviewed command entries. Each entry
+includes:
+
+- `command`
+- `aliases`
+- `kind`
+- `parent_command`
+- `section`
+- `title`
+- `uri`
+
+### `resource://commands/{command}`
+
+Returns one reviewed top-level command entry as JSON for a canonical resource
+path.
+
+### `resource://commands/{parent}/{command}`
+
+Returns one reviewed nested command entry as JSON for a canonical resource
+path. Aliases remain supported by `lookup_command`, but these resource
+templates expect canonical paths only.
+
+Examples:
+
+- `resource://commands/title`
+- `resource://commands/set/order`
+- `resource://commands/title/case`
+
+## MCP Prompts
+
+### `inspect_topdrawer_script`
+
+Prompt arguments:
+
+- `script_text` optional
+- `input_path` optional
+- `goal` optional
+
+The prompt requires exactly one of `script_text` or `input_path` and guides the
+agent through:
+
+```text
+scan_topdrawer_file | scan_topdrawer_script -> lookup_command -> search_manual if needed
+```
+
+### `discover_topdrawer_command`
+
+Prompt arguments:
+
+- `query` required
+- `context` optional
+
+This prompt guides the agent through the current phrase-to-command workflow:
+
+```text
+search_manual -> extract candidates -> lookup_command
+```
 
 ## Test
 

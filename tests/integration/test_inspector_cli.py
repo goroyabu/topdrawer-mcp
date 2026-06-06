@@ -74,6 +74,110 @@ def test_inspector_lists_search_manual(write_manual):
     assert "get_manual_sample" in names
     assert "lookup_command" in names
     assert "get_server_runtime_info" in names
+    assert "scan_topdrawer_script" in names
+    assert "scan_topdrawer_file" in names
+
+
+def test_inspector_lists_resources(write_manual):
+    manual_path = write_manual("BARGRAPH command\n")
+
+    response = _run_inspector(manual_path, "--method", "resources/list")
+
+    uris = [resource["uri"] for resource in response["resources"]]
+    assert uris == ["resource://commands/index"]
+
+
+def test_inspector_lists_resource_templates(write_manual):
+    manual_path = write_manual("BARGRAPH command\n")
+
+    response = _run_inspector(manual_path, "--method", "resources/templates/list")
+
+    uri_templates = [template["uriTemplate"] for template in response["resourceTemplates"]]
+    assert "resource://commands/{command}" in uri_templates
+    assert "resource://commands/{parent}/{command}" in uri_templates
+
+
+def test_inspector_reads_command_index_resource(write_manual):
+    manual_path = write_manual("BARGRAPH command\n")
+
+    response = _run_inspector(
+        manual_path,
+        "--method",
+        "resources/read",
+        "--uri",
+        "resource://commands/index",
+    )
+
+    content = response["contents"][0]
+    assert content["mimeType"] == "application/json"
+    assert "\"command\": \"PLOT\"" in content["text"]
+
+
+def test_inspector_reads_set_order_command_resource(write_manual):
+    manual_path = write_manual("BARGRAPH command\n")
+
+    response = _run_inspector(
+        manual_path,
+        "--method",
+        "resources/read",
+        "--uri",
+        "resource://commands/set/order",
+    )
+
+    content = response["contents"][0]
+    assert content["mimeType"] == "application/json"
+    assert "\"command\": \"SET ORDER\"" in content["text"]
+
+
+def test_inspector_lists_prompts(write_manual):
+    manual_path = write_manual("BARGRAPH command\n")
+
+    response = _run_inspector(manual_path, "--method", "prompts/list")
+
+    names = [prompt["name"] for prompt in response["prompts"]]
+    assert "inspect_topdrawer_script" in names
+    assert "discover_topdrawer_command" in names
+
+
+def test_inspector_gets_inspect_topdrawer_script_prompt(write_manual):
+    manual_path = write_manual("BARGRAPH command\n")
+
+    response = _run_inspector(
+        manual_path,
+        "--method",
+        "prompts/get",
+        "--prompt-name",
+        "inspect_topdrawer_script",
+        "--prompt-args",
+        "script_text=plot",
+        "--prompt-args",
+        "goal=understand the script",
+    )
+
+    message = response["messages"][0]["content"]["text"]
+    assert "scan_topdrawer_script" in message
+    assert "lookup_command" in message
+    assert "search_manual" in message
+
+
+def test_inspector_gets_discover_topdrawer_command_prompt(write_manual):
+    manual_path = write_manual("BARGRAPH command\n")
+
+    response = _run_inspector(
+        manual_path,
+        "--method",
+        "prompts/get",
+        "--prompt-name",
+        "discover_topdrawer_command",
+        "--prompt-args",
+        "query=polar plot",
+        "--prompt-args",
+        "context=user wants a polar chart",
+    )
+
+    message = response["messages"][0]["content"]["text"]
+    assert "search_manual" in message
+    assert "lookup_command" in message
 
 
 def test_inspector_calls_search_manual(write_manual):
