@@ -8,6 +8,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from topdrawer_mcp.command_lookup import CommandLookupEntry
+from topdrawer_mcp.command_lookup import load_command_lookup_index
 from topdrawer_mcp.command_lookup import lookup_command_entry
 from topdrawer_mcp.render import RenderResult
 from topdrawer_mcp.render import render_topdrawer_input
@@ -218,13 +219,134 @@ def get_server_runtime_info() -> RuntimeInfoResult:
 
 
 def scan_topdrawer_script(script: str) -> ScriptScanResult:
-    """Scan inline Topdrawer script text for known commands and simple rule issues."""
+    """Scan inline Topdrawer script text for recognized command occurrences."""
     return scan_topdrawer_script_text(script)
 
 
 def scan_topdrawer_file(input_path: str) -> ScriptScanResult:
-    """Scan one Topdrawer script file for known commands and simple rule issues."""
+    """Scan one Topdrawer script file for recognized command occurrences."""
     return scan_topdrawer_script_file(input_path)
+
+
+def _command_path_parts(entry: CommandLookupEntry) -> tuple[str, ...]:
+    """Return the canonical resource path parts for one reviewed command entry."""
+    command_parts = entry["command"].lower().split()
+    parent_command = entry["parent_command"]
+    if entry["kind"] == "set-subcommand" and parent_command:
+        parent_parts = parent_command.lower().split()
+        return tuple(parent_parts + command_parts[len(parent_parts) :])
+    if entry["kind"] == "modifier" and parent_command:
+        return (*parent_command.lower().split(), *command_parts)
+    return tuple(command_parts)
+
+
+def _command_resource_uri(entry: CommandLookupEntry) -> str:
+    """Return the canonical resource URI for one reviewed command entry."""
+    return "resource://commands/" + "/".join(_command_path_parts(entry))
+
+
+@cache
+def _command_resource_path_map() -> dict[str, CommandLookupEntry]:
+    """Return the canonical command-resource path map."""
+    index = load_command_lookup_index()
+    path_map: dict[str, CommandLookupEntry] = {}
+    for entry in index["entries"]:
+        uri = _command_resource_uri(entry)
+        path = uri.removeprefix("resource://commands/")
+        existing = path_map.get(path)
+        if existing is not None:
+            raise ValueError(
+                "Duplicate command resource path "
+                f"{path!r} for {existing['command']!r} and {entry['command']!r}"
+            )
+        path_map[path] = entry
+    return path_map
+
+
+def command_index_resource() -> dict[str, Any]:
+    """Return a discovery index for reviewed command entries."""
+    index = load_command_lookup_index()
+    return {
+        "schema_version": index["schema_version"],
+        "source_name": index["source_name"],
+        "entry_count": index["entry_count"],
+        "entries": [
+            {
+                "command": entry["command"],
+                "aliases": entry["aliases"],
+                "kind": entry["kind"],
+                "parent_command": entry["parent_command"],
+                "section": entry["section"],
+                "title": entry["title"],
+                "uri": _command_resource_uri(entry),
+            }
+            for entry in index["entries"]
+        ],
+    }
+
+
+def command_resource(command_path: str) -> CommandLookupEntry:
+    """Return one reviewed command entry for a canonical command resource path."""
+    normalized_path = "/".join(part for part in command_path.strip("/").lower().split("/") if part)
+    entry = _command_resource_path_map().get(normalized_path)
+    if entry is None:
+        raise ValueError(f"Unknown command lookup entry: {command_path!r}")
+    return lookup_command_entry(entry["command"])
+
+
+def command_resource_top_level(command: str) -> CommandLookupEntry:
+    """Return one reviewed top-level command entry for a canonical resource path."""
+    return command_resource(command)
+
+
+def command_resource_nested(parent: str, command: str) -> CommandLookupEntry:
+    """Return one reviewed nested command entry for a canonical resource path."""
+    return command_resource(f"{parent}/{command}")
+
+
+def inspect_topdrawer_script(
+    script_text: str | None = None,
+    input_path: str | None = None,
+    goal: str | None = None,
+) -> str:
+    """Guide an agent through inspecting an existing Topdrawer script."""
+    has_script_text = bool(script_text and script_text.strip())
+    has_input_path = bool(input_path and input_path.strip())
+    if has_script_text == has_input_path:
+        raise ValueError("Provide exactly one of script_text or input_path.")
+
+    source_line = (
+        f"Use `scan_topdrawer_script` on the provided inline script text."
+        if has_script_text
+        else f"Use `scan_topdrawer_file` on `{input_path}`."
+    )
+    goal_line = f"Goal: {goal.strip()}\n\n" if goal and goal.strip() else ""
+    return (
+        f"{goal_line}"
+        "Inspect the Topdrawer script with this flow:\n"
+        f"1. {source_line}\n"
+        "2. Review the returned normalized command names and line numbers.\n"
+        "3. Call `lookup_command` for the commands relevant to the current task.\n"
+        "4. Call `search_manual` only if `lookup_command` does not provide enough context.\n"
+        "5. Summarize the important commands, any ambiguities, and the next recommended action.\n"
+    )
+
+
+def discover_topdrawer_command(query: str, context: str | None = None) -> str:
+    """Guide an agent through discovering the right Topdrawer command."""
+    stripped_query = query.strip()
+    if not stripped_query:
+        raise ValueError("query must be a non-empty string")
+
+    context_line = f"Context: {context.strip()}\n\n" if context and context.strip() else ""
+    return (
+        f"{context_line}"
+        f"Find the best Topdrawer command for: {stripped_query}\n\n"
+        "1. Call `search_manual` with the key words or phrase.\n"
+        "2. Extract likely command candidates from the manual matches.\n"
+        "3. Call `lookup_command` for the best candidates.\n"
+        "4. Summarize the best match and note any ambiguity between candidates.\n"
+    )
 
 
 def create_server() -> FastMCP:
@@ -239,6 +361,37 @@ def create_server() -> FastMCP:
     server.add_tool(get_server_runtime_info, structured_output=True)
     server.add_tool(scan_topdrawer_script, structured_output=True)
     server.add_tool(scan_topdrawer_file, structured_output=True)
+    server.resource(
+        "resource://commands/index",
+        name="command_index_resource",
+        title="Command index",
+        description="Reviewed Topdrawer command index for resource discovery.",
+        mime_type="application/json",
+    )(command_index_resource)
+    server.resource(
+        "resource://commands/{command}",
+        name="command_resource_top_level",
+        title="Command entry",
+        description="One reviewed top-level Topdrawer command entry by canonical resource path.",
+        mime_type="application/json",
+    )(command_resource_top_level)
+    server.resource(
+        "resource://commands/{parent}/{command}",
+        name="command_resource_nested",
+        title="Command entry",
+        description="One reviewed nested Topdrawer command entry by canonical resource path.",
+        mime_type="application/json",
+    )(command_resource_nested)
+    server.prompt(
+        name="inspect_topdrawer_script",
+        title="Inspect Topdrawer script",
+        description="Review an existing Topdrawer script using scan, lookup, and manual search.",
+    )(inspect_topdrawer_script)
+    server.prompt(
+        name="discover_topdrawer_command",
+        title="Discover Topdrawer command",
+        description="Find the most likely Topdrawer command from a phrase or user intent.",
+    )(discover_topdrawer_command)
     return server
 
 

@@ -73,9 +73,14 @@ outside that scope.
   topics open as GitHub issues when they are not yet concrete tasks.
 - Capture roadmap, design, and requirements material in
   `docs/superpowers/specs/`.
+- Read `docs/superpowers/README.md` before interpreting individual
+  Superpowers specs or plans.
 - A Superpowers spec does not need to be implementation-ready. It may record
   roadmap intent, requirements analysis, or design questions when that is the
   correct current maturity level.
+- Do not treat an individual Superpowers spec or plan as the source of truth
+  for current implementation status without checking code, tests, commits, or
+  merged pull requests.
 - Promote work from spec space into issue or plan space only when the task
   becomes concrete enough to implement or verify independently.
 

@@ -26,8 +26,6 @@ def test_basic_plot_fixture_scans_as_one_plot_command():
             "kind": "command",
         }
     ]
-    assert result["summary"]["counts"] == {"PLOT": 1}
-    assert result["checks"] == []
 
 
 def test_basic_join_fixture_scans_as_one_join_command():
@@ -43,5 +41,3 @@ def test_basic_join_fixture_scans_as_one_join_command():
             "kind": "command",
         }
     ]
-    assert result["summary"]["counts"] == {"JOIN": 1}
-    assert result["checks"] == []
