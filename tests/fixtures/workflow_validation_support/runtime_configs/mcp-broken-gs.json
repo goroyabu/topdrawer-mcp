@@ -1,0 +1,17 @@
+{
+  "servers": {
+    "topdrawerMcp": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/Users/yabugoro/github/topdrawer/topdrawer-mcp",
+        "run",
+        "topdrawer-mcp"
+      ],
+      "env": {
+        "GS_EXECUTABLE_PATH": "/nonexistent/gs"
+      }
+    }
+  }
+}

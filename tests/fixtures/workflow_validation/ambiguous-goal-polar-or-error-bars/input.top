@@ -1,0 +1,8 @@
+set limits x 0 6 y 0 30
+set order x y
+1 1
+2 4
+3 9
+4 16
+5 25
+join

@@ -1,0 +1,6 @@
+set limits x 0 3 y 0 600
+set order x y
+1 90
+2 240
+3 510
+plo
