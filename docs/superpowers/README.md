@@ -33,6 +33,9 @@ roadmap or design topics:
 - `docs/superpowers/specs/2026-06-03-preprocessing-and-structured-lookup-roadmap-design.md`
 - `docs/superpowers/specs/2026-06-03-coverage-expansion-roadmap-design.md`
 - `docs/superpowers/specs/2026-06-03-tabular-data-flow-design.md`
+- `docs/superpowers/specs/2026-06-06-v0.2-release-followups-design.md`
+- `docs/superpowers/specs/2026-06-06-render-device-control-design.md`
+- `docs/superpowers/specs/2026-06-07-agent-workflow-validation-for-v1-design.md`
 
 They should be read before older focused specs when deciding how a topic should
 move forward.
@@ -52,9 +55,12 @@ Historical plans include:
 - `docs/superpowers/plans/2026-06-02-contributing-guide.md`
 - `docs/superpowers/plans/2026-06-03-set-order-set-font-sample-coverage.md`
 
+Other focused specs and plans should usually be treated the same way unless a
+document is explicitly being used as current guidance for an active topic.
+
 These documents may describe work that has since been completed, extended, or
 superseded by later design decisions. Treat them as records of the decision
-process, not as a live backlog.
+process, not as a live backlog or an authoritative implementation-status table.
 
 ## How To Determine Current Implementation Status
 
@@ -74,6 +80,10 @@ roadmap direction, or design decisions.
 
 Add a new plan when an approved change needs implementation steps that another
 agent or engineer can execute.
+
+In the usual Superpowers flow, the spec comes first and captures the approved
+design direction. The plan follows after that and translates the approved spec
+into implementation steps.
 
 Keep broad roadmap, requirements-analysis, and design-exploration topics in
 `docs/superpowers/specs/` until they become concrete enough to track as GitHub

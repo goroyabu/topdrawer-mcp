@@ -42,8 +42,15 @@ For this repository, the expected design flow for non-minor work is:
 
 1. Identify the concrete problem.
 2. Record the intended change in a spec.
-3. Record the implementation approach in a plan.
-4. Implement, verify, and document the change.
+3. Review and approve the spec direction before proceeding.
+4. Record the implementation approach in a plan.
+5. Implement, verify, and document the change.
+
+The intent is to keep design work ahead of implementation work.
+
+For non-trivial changes, do not treat the implementation plan as the place
+where the change is first defined. The spec should already capture the intended
+behavior and design direction before the plan is written.
 
 ## Minor Change Exception
 
@@ -64,10 +71,11 @@ For normal development work:
 2. Create a focused topic branch.
 3. Prepare the required spec/plan documents unless the change qualifies as a
    minor-change exception.
-4. Implement the change.
-5. Run the relevant verification steps.
-6. Update any required documentation.
-7. Open a pull request and link the related issue when applicable.
+4. Review the spec and confirm the design direction before implementation.
+5. Implement the change.
+6. Run the relevant verification steps.
+7. Update any required documentation.
+8. Open a pull request and link the related issue when applicable.
 
 Keep changes narrow and reviewable.
 
