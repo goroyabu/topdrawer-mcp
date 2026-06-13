@@ -90,3 +90,22 @@ into implementation steps.
 Keep broad roadmap, requirements-analysis, and design-exploration topics in
 `docs/superpowers/specs/` until they become concrete enough to track as GitHub
 issues or implementation plans.
+
+## Issue Promotion Guidance
+
+Promote a topic from Superpowers docs into a GitHub issue when it becomes a
+concrete repository task that can be implemented or verified independently.
+
+Good issue candidates usually have:
+
+- one clear outcome
+- a bounded implementation or validation scope
+- enough design agreement that the remaining work is execution rather than
+  exploration
+
+Keep a topic in Superpowers docs when it is still mainly about:
+
+- roadmap direction
+- open design tradeoffs
+- prioritization or scope ordering
+- future candidate work that is not yet narrow enough to execute cleanly
