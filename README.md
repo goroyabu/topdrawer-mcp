@@ -13,6 +13,8 @@ Tools:
 - `get_server_runtime_info` for resolved manual/render runtime configuration
 - `scan_topdrawer_script` for extracting recognized commands from inline script text
 - `scan_topdrawer_file` for extracting recognized commands from an existing `.top` file
+- `generate_topdrawer_png` for generating PNG output from an existing file or inline script
+- `generate_topdrawer_postscript` for generating PostScript output from an existing file or inline script
 - `render_topdrawer_file` for rendering an existing Topdrawer input file to PNG
 - `render_topdrawer_script` for rendering inline Topdrawer script text to PNG
 - `list_manual_samples` for listing curated sample metadata with optional filters
@@ -23,6 +25,8 @@ Resources:
 - `resource://commands/index` for reviewed command discovery metadata
 - `resource://commands/{command}` for one reviewed top-level canonical command entry
 - `resource://commands/{parent}/{command}` for one reviewed nested canonical command entry
+- dynamic `resource://artifacts/{artifact_id}` manifests returned by generation tools
+- dynamic `resource://artifacts/{artifact_id}/output`, `/source`, and `/metadata` child resources for retained artifacts
 
 Prompts:
 
@@ -101,7 +105,7 @@ From the repository root:
 uv run topdrawer-mcp
 ```
 
-To use `render_topdrawer_file`, install `td` and Ghostscript (`gs`) so both are
+To use `generate_topdrawer_png` and the compatibility render tools, install `td` and Ghostscript (`gs`) so both are
 available on `PATH`. You can override the executable paths with:
 
 ```bash
@@ -135,23 +139,106 @@ Input:
 `limit` defaults to `5` and is clamped to `1..20`. `context_lines` defaults to
 `2` and is clamped to `0..10`.
 
-### `render_topdrawer_file`
+### `generate_topdrawer_png`
 
 Input:
 
 ```json
 {
   "input_path": "examples/error-bars.top",
+  "script": null,
+  "base_dir": null,
   "output_path": "/tmp/output.png",
+  "overwrite": false,
+  "dpi": 160,
+  "padding": 12,
+  "crop": true,
+  "background": "white"
+}
+```
+
+Provide exactly one of `input_path` or `script`. `base_dir` is used only for
+inline script input. `output_path` is optional and is no longer the canonical
+handoff; the tool always returns an `artifact_id` and `resource_uri` for the
+generated artifact bundle. When `output_path` is omitted, the server still uses
+an internal temp path while creating the retained artifact. `dpi` defaults to
+`160`, `padding` defaults to `12` points, `crop` defaults to `true`, and
+`background` accepts `white` or `transparent`.
+
+With `crop=true`, the server trims to the PostScript BoundingBox and applies
+`padding`. With `crop=false`, the server renders the original PostScript page
+size and ignores `padding`.
+
+Success result shape:
+
+```json
+{
+  "success": true,
+  "format": "png",
+  "message": "Generated PNG successfully.",
+  "artifact_id": "tdart_20260613_123456_abcd1234",
+  "resource_uri": "resource://artifacts/tdart_20260613_123456_abcd1234",
+  "metadata": {
+    "source_kind": "input_path",
+    "dpi": 160,
+    "background": "white",
+    "crop_applied": true,
+    "output_path_overridden": false,
+    "normalized_device_config": {
+      "device": "POSTSCRIPT",
+      "output_key": "FILE",
+      "output_value": "/tmp/topdrawer-mcp-render-ps/render.ps"
+    }
+  }
+}
+```
+
+Read `resource_uri` first to obtain the artifact manifest, then follow its
+`output`, `source`, and `metadata` URIs as needed. Generated artifacts are
+temporary and are not listed in normal `resources/list`. The `/output`
+resource keeps the same URI shape for every format, while its MIME type is
+artifact-specific such as `image/png` or `application/postscript`. The
+retained `/source` resource stores the execution-time Topdrawer script the
+server actually ran.
+
+### `generate_topdrawer_postscript`
+
+Input:
+
+```json
+{
+  "input_path": "examples/error-bars.top",
+  "script": null,
+  "base_dir": null,
+  "output_path": "/tmp/output.ps",
   "overwrite": false
 }
 ```
 
-`input_path` may be absolute or current-working-directory-relative.
-`output_path` is optional; when omitted, the server writes to a unique PNG path
-under the system temp directory. `overwrite` defaults to `false`. PNG output is
-rendered with an opaque white background and trimmed to the PostScript
-BoundingBox with small padding.
+Provide exactly one of `input_path` or `script`. `base_dir` is used only for
+inline script input. `output_path` is optional and remains supplemental only;
+the canonical result is the returned artifact manifest URI.
+
+Success result shape:
+
+```json
+{
+  "success": true,
+  "format": "postscript",
+  "message": "Generated PostScript successfully.",
+  "artifact_id": "tdart_20260613_123457_efgh5678",
+  "resource_uri": "resource://artifacts/tdart_20260613_123457_efgh5678",
+  "metadata": {
+    "source_kind": "script",
+    "output_path_overridden": false,
+    "normalized_device_config": {
+      "device": "POSTSCRIPT",
+      "output_key": "FILE",
+      "output_value": "/tmp/topdrawer-mcp-render-out/render.ps"
+    }
+  }
+}
+```
 
 ### `get_server_runtime_info`
 
@@ -200,7 +287,8 @@ set order y x dx dy
 plot
 ```
 
-Use `render_topdrawer_file` when you already have a `.top` file on disk.
+Use `generate_topdrawer_png` or `generate_topdrawer_postscript` for new work
+when you already have a `.top` file on disk.
 
 ### `render_topdrawer_script`
 
@@ -224,6 +312,12 @@ PostScript BoundingBox with small padding.
 Use `render_topdrawer_script` when the caller has inline Topdrawer text, chat
 data that the agent converts into a script, or a script variant that does not
 need to be saved as a persistent `.top` file first.
+
+### Compatibility render tools
+
+`render_topdrawer_file` and `render_topdrawer_script` remain available during
+the transition to the format-centered surface. They continue to generate PNG
+output and delegate to the newer PNG-generation core.
 
 ### `lookup_command`
 
