@@ -35,6 +35,8 @@ roadmap or design topics:
 - `docs/superpowers/specs/2026-06-03-tabular-data-flow-design.md`
 - `docs/superpowers/specs/2026-06-06-v0.2-release-followups-design.md`
 - `docs/superpowers/specs/2026-06-06-render-device-control-design.md`
+- `docs/superpowers/specs/2026-06-12-render-output-format-strategy-design.md`
+- `docs/superpowers/specs/2026-06-12-render-device-parse-and-execution-policy-design.md`
 - `docs/superpowers/specs/2026-06-07-agent-workflow-validation-for-v1-design.md`
 
 They should be read before older focused specs when deciding how a topic should
