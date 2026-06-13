@@ -94,6 +94,8 @@ def test_create_server_registers_search_and_render_tools():
     }
 
     assert "search_manual" in tool_names
+    assert "generate_topdrawer_png" in tool_names
+    assert "generate_topdrawer_postscript" in tool_names
     assert "render_topdrawer_file" in tool_names
     assert "render_topdrawer_script" in tool_names
     assert "list_manual_samples" in tool_names
@@ -119,6 +121,10 @@ def test_create_server_registers_resources_and_prompts():
     assert resource_uris == {"resource://commands/index"}
     assert "resource://commands/{command}" in template_uris
     assert "resource://commands/{parent}/{command}" in template_uris
+    assert "resource://artifacts/{artifact_id}" in template_uris
+    assert "resource://artifacts/{artifact_id}/output" in template_uris
+    assert "resource://artifacts/{artifact_id}/source" in template_uris
+    assert "resource://artifacts/{artifact_id}/metadata" in template_uris
     assert "inspect_topdrawer_script" in prompt_names
     assert "discover_topdrawer_command" in prompt_names
 
@@ -185,6 +191,68 @@ def test_modifier_resource_returns_full_reviewed_entry():
     assert payload["parent_command"] == "TITLE"
 
 
+def test_artifact_manifest_resource_reads_manager_payload(monkeypatch: pytest.MonkeyPatch):
+    class FakeManager:
+        def read_manifest(self, artifact_id: str):
+            return {"artifact_id": artifact_id, "format": "png"}
+
+    monkeypatch.setattr(server, "get_artifact_manager", lambda: FakeManager())
+
+    contents = list(
+        asyncio.run(
+            server.create_server().read_resource("resource://artifacts/tdart_test")
+        )
+    )
+
+    payload = json.loads(contents[0].content)
+    assert payload["artifact_id"] == "tdart_test"
+
+
+def test_artifact_output_resource_reads_manager_payload(monkeypatch: pytest.MonkeyPatch):
+    class FakeManager:
+        def read_output(self, artifact_id: str):
+            return b"\x89PNG\r\n\x1a\n"
+
+        def load_artifact(self, artifact_id: str):
+            class FakeArtifact:
+                output_mime_type = "image/png"
+
+            return FakeArtifact()
+
+    monkeypatch.setattr(server, "get_artifact_manager", lambda: FakeManager())
+
+    contents = list(
+        asyncio.run(
+            server.create_server().read_resource("resource://artifacts/tdart_test/output")
+        )
+    )
+
+    assert contents[0].content == b"\x89PNG\r\n\x1a\n"
+    assert contents[0].mime_type == "image/png"
+
+
+def test_artifact_output_resource_uses_postscript_mime_type(monkeypatch: pytest.MonkeyPatch):
+    class FakeManager:
+        def read_output(self, artifact_id: str):
+            return "%!PS-Adobe-1.0\n"
+
+        def load_artifact(self, artifact_id: str):
+            class FakeArtifact:
+                output_mime_type = "application/postscript"
+
+            return FakeArtifact()
+
+    monkeypatch.setattr(server, "get_artifact_manager", lambda: FakeManager())
+
+    contents = list(
+        asyncio.run(
+            server.create_server().read_resource("resource://artifacts/tdart_test/output")
+        )
+    )
+
+    assert contents[0].mime_type == "application/postscript"
+
+
 def test_single_command_resource_rejects_unknown_canonical_path():
     with pytest.raises(ValueError, match="Unknown command lookup entry"):
         list(
@@ -243,10 +311,12 @@ def test_render_topdrawer_script_uses_shared_render_core(monkeypatch: pytest.Mon
         captured["source_text"] = source_text
         captured["kwargs"] = kwargs
         return {
-            "output_path": "/tmp/render.png",
-            "td_executable": "/bin/td",
             "success": True,
+            "format": "png",
             "message": "ok",
+            "artifact_id": "tdart_test",
+            "resource_uri": "resource://artifacts/tdart_test",
+            "metadata": {},
         }
 
     monkeypatch.setattr(server, "render_topdrawer_source_text", fake_render)
@@ -265,6 +335,79 @@ def test_render_topdrawer_script_uses_shared_render_core(monkeypatch: pytest.Mon
         "overwrite": True,
     }
     assert result["success"] is True
+
+
+def test_generate_topdrawer_png_uses_render_core(monkeypatch: pytest.MonkeyPatch):
+    captured = {}
+
+    def fake_generate(**kwargs):
+        captured["kwargs"] = kwargs
+        return {
+            "success": True,
+            "format": "png",
+            "message": "ok",
+            "artifact_id": "tdart_test",
+            "resource_uri": "resource://artifacts/tdart_test",
+            "metadata": {},
+        }
+
+    monkeypatch.setattr(server, "generate_topdrawer_png_core", fake_generate)
+
+    result = server.generate_topdrawer_png(
+        script="plot\n",
+        base_dir="samples",
+        output_path="out.png",
+        overwrite=True,
+        dpi=200,
+        padding=24,
+        crop=False,
+        background="transparent",
+    )
+
+    assert captured["kwargs"] == {
+        "input_path": None,
+        "script": "plot\n",
+        "base_dir": "samples",
+        "output_path": "out.png",
+        "overwrite": True,
+        "dpi": 200,
+        "padding": 24,
+        "crop": False,
+        "background": "transparent",
+    }
+    assert result["format"] == "png"
+
+
+def test_generate_topdrawer_postscript_uses_render_core(monkeypatch: pytest.MonkeyPatch):
+    captured = {}
+
+    def fake_generate(**kwargs):
+        captured["kwargs"] = kwargs
+        return {
+            "success": True,
+            "format": "postscript",
+            "message": "ok",
+            "artifact_id": "tdart_test",
+            "resource_uri": "resource://artifacts/tdart_test",
+            "metadata": {},
+        }
+
+    monkeypatch.setattr(server, "generate_topdrawer_postscript_core", fake_generate)
+
+    result = server.generate_topdrawer_postscript(
+        input_path="sample.top",
+        output_path="out.ps",
+        overwrite=True,
+    )
+
+    assert captured["kwargs"] == {
+        "input_path": "sample.top",
+        "script": None,
+        "base_dir": None,
+        "output_path": "out.ps",
+        "overwrite": True,
+    }
+    assert result["format"] == "postscript"
 
 
 def test_list_manual_samples_returns_structured_entries():

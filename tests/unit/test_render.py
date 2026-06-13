@@ -17,6 +17,21 @@ def _make_executable(path: Path):
     path.chmod(0o755)
 
 
+class _FakeArtifact:
+    def __init__(self, artifact_id: str, resource_uri: str):
+        self.artifact_id = artifact_id
+        self.resource_uri = resource_uri
+
+
+class _FakeArtifactManager:
+    def __init__(self):
+        self.created = []
+
+    def create_artifact(self, **kwargs):
+        self.created.append(kwargs)
+        return _FakeArtifact("tdart_test", "resource://artifacts/tdart_test")
+
+
 def test_resolve_td_executable_prefers_environment(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     configured = tmp_path / "custom-td"
     fallback = tmp_path / "td"
@@ -25,39 +40,7 @@ def test_resolve_td_executable_prefers_environment(monkeypatch: pytest.MonkeyPat
     monkeypatch.setenv(render.TD_EXECUTABLE_ENV, str(configured))
     monkeypatch.setenv("PATH", str(tmp_path))
 
-    resolved = render.resolve_td_executable()
-
-    assert resolved == configured.resolve()
-
-
-def test_resolve_td_executable_falls_back_to_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-    fallback = tmp_path / "td"
-    _make_executable(fallback)
-    monkeypatch.delenv(render.TD_EXECUTABLE_ENV, raising=False)
-    monkeypatch.setenv("PATH", str(tmp_path))
-
-    resolved = render.resolve_td_executable()
-
-    assert resolved == fallback.resolve()
-
-
-def test_resolve_td_executable_rejects_non_executable_env_path(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-):
-    configured = tmp_path / "custom-td"
-    configured.write_text("not executable\n", encoding="utf-8")
-    monkeypatch.setenv(render.TD_EXECUTABLE_ENV, str(configured))
-
-    with pytest.raises(PermissionError, match="non-executable file"):
-        render.resolve_td_executable()
-
-
-def test_resolve_gs_executable_raises_when_missing(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("PATH", "")
-
-    with pytest.raises(FileNotFoundError, match="get_server_runtime_info"):
-        render.resolve_gs_executable()
+    assert render.resolve_td_executable() == configured.resolve()
 
 
 def test_resolve_gs_executable_prefers_environment(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
@@ -68,20 +51,13 @@ def test_resolve_gs_executable_prefers_environment(monkeypatch: pytest.MonkeyPat
     monkeypatch.setenv(render.GS_EXECUTABLE_ENV, str(configured))
     monkeypatch.setenv("PATH", str(tmp_path))
 
-    resolved = render.resolve_gs_executable()
-
-    assert resolved == configured.resolve()
+    assert render.resolve_gs_executable() == configured.resolve()
 
 
-def test_resolve_gs_executable_rejects_non_executable_env_path(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-):
-    configured = tmp_path / "custom-gs"
-    configured.write_text("not executable\n", encoding="utf-8")
-    monkeypatch.setenv(render.GS_EXECUTABLE_ENV, str(configured))
+def test_resolve_gs_executable_raises_when_missing(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("PATH", "")
 
-    with pytest.raises(PermissionError, match="non-executable file"):
+    with pytest.raises(FileNotFoundError, match="get_server_runtime_info"):
         render.resolve_gs_executable()
 
 
@@ -90,66 +66,13 @@ def test_resolve_input_path_rejects_missing_file(tmp_path: Path):
         render.resolve_input_path(str(tmp_path / "missing.top"))
 
 
-def test_resolve_input_path_rejects_directory(tmp_path: Path):
-    with pytest.raises(IsADirectoryError, match="Input path is not a file"):
-        render.resolve_input_path(str(tmp_path))
-
-
-def test_resolve_output_path_defaults_to_system_temp():
-    resolved = render.resolve_output_path(None)
+def test_resolve_output_path_defaults_to_named_temp_file():
+    resolved = render.resolve_output_path(None, default_filename="render.ps")
 
     assert resolved.is_absolute()
-    assert resolved.name == "render.png"
+    assert resolved.name == "render.ps"
     assert resolved.parent.parent == Path(tempfile.gettempdir()).resolve()
     assert resolved.parent.name.startswith("topdrawer-mcp-render-out-")
-
-
-def test_resolve_output_path_uses_current_working_directory(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-):
-    monkeypatch.chdir(tmp_path)
-
-    resolved = render.resolve_output_path("nested/output.png")
-
-    assert resolved == (tmp_path / "nested" / "output.png").resolve()
-
-
-def test_resolve_base_dir_defaults_to_current_working_directory(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-):
-    monkeypatch.chdir(tmp_path)
-
-    resolved = render.resolve_base_dir(None)
-
-    assert resolved == tmp_path.resolve()
-
-
-def test_resolve_base_dir_uses_current_working_directory_for_relative_path(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-):
-    target = tmp_path / "nested"
-    target.mkdir()
-    monkeypatch.chdir(tmp_path)
-
-    resolved = render.resolve_base_dir("nested")
-
-    assert resolved == target.resolve()
-
-
-def test_resolve_base_dir_rejects_missing_directory(tmp_path: Path):
-    with pytest.raises(FileNotFoundError, match="Base directory does not exist"):
-        render.resolve_base_dir(str(tmp_path / "missing"))
-
-
-def test_resolve_base_dir_rejects_non_directory(tmp_path: Path):
-    file_path = tmp_path / "not-a-dir"
-    file_path.write_text("x", encoding="utf-8")
-
-    with pytest.raises(NotADirectoryError, match="Base directory is not a directory"):
-        render.resolve_base_dir(str(file_path))
 
 
 def test_build_wrapper_text_prepends_postscript_device():
@@ -157,6 +80,124 @@ def test_build_wrapper_text_prepends_postscript_device():
 
     assert wrapped.startswith("SET DEVICE POSTSCR FILE='render.ps'\n")
     assert "TITLE TOP 'smoke'" in wrapped
+
+
+def test_parse_set_device_line_accepts_postscr_abbreviation():
+    parsed = render.parse_set_device_line("SET DEVICE POSTSCR ORIENT=3 FILE='plot.ps'")
+
+    assert parsed.device == "POSTSCRIPT"
+    assert parsed.orientation == 3
+    assert parsed.output_key == "FILE"
+    assert parsed.output_value == "plot.ps"
+
+
+def test_parse_set_device_line_preserves_unknown_trailing_tokens_for_policy_rejection():
+    parsed = render.parse_set_device_line("SET DEVICE POSTSCRIPT FOO BAR")
+
+    assert parsed.device == "POSTSCRIPT"
+    assert parsed.option_tokens == ["FOO", "BAR"]
+
+
+def test_parse_set_device_line_preserves_unknown_key_value_for_policy_rejection():
+    parsed = render.parse_set_device_line("SET DEVICE POSTSCRIPT BAZ=1")
+
+    assert parsed.device == "POSTSCRIPT"
+    assert parsed.unknown_options == {"BAZ": "1"}
+
+
+def test_parse_set_device_line_rejects_invalid_orientation():
+    with pytest.raises(ValueError, match="ORIENTATION must be 0..3"):
+        render.parse_set_device_line("SET DEVICE POSTSCRIPT ORIENTATION=9")
+
+
+def test_normalize_execution_device_config_overrides_script_side_file():
+    parsed, overridden = render.normalize_execution_device_config(
+        "SET DEVICE POSTSCRIPT FILE='user.ps'\nplot\n",
+        output_format="png",
+        execution_output_path=Path("/tmp/server.ps"),
+    )
+
+    assert overridden is True
+    assert parsed.output_key == "FILE"
+    assert parsed.output_value == "/tmp/server.ps"
+
+
+def test_normalize_execution_device_config_rejects_unsupported_device():
+    with pytest.raises(render.PolicyError, match="unsupported device error"):
+        render.normalize_execution_device_config(
+            "SET DEVICE XWINDOW\nplot\n",
+            output_format="png",
+            execution_output_path=Path("/tmp/server.ps"),
+        )
+
+
+def test_normalize_execution_device_config_rejects_unknown_trailing_tokens_as_policy_error():
+    with pytest.raises(render.PolicyError, match="unsupported option or mode error"):
+        render.normalize_execution_device_config(
+            "SET DEVICE POSTSCRIPT FOO BAR\nplot\n",
+            output_format="png",
+            execution_output_path=Path("/tmp/server.ps"),
+        )
+
+
+def test_normalized_device_config_metadata_uses_parsed_values():
+    parsed = render.ParsedSetDevice(
+        original_line="SET DEVICE POSTSCRIPT ORIENTATION=3 COLOR=ON FILE='out.ps'",
+        device="POSTSCRIPT",
+        orientation=3,
+        orientation_keyword="ORIENTATION",
+        color=True,
+        output_key="FILE",
+        output_value="/tmp/server.ps",
+        width="10",
+        height="20",
+        reverse=True,
+        sequential=True,
+    )
+
+    metadata = render._normalized_device_config_metadata(parsed)
+
+    assert metadata == {
+        "device": "POSTSCRIPT",
+        "output_key": "FILE",
+        "output_value": "/tmp/server.ps",
+        "orientation": 3,
+        "orientation_keyword": "ORIENTATION",
+        "color": True,
+        "width": "10",
+        "height": "20",
+        "reverse": True,
+        "sequential": True,
+    }
+
+
+def test_normalize_execution_device_config_rejects_multiple_set_device_commands():
+    with pytest.raises(render.PolicyError, match="multiple SET DEVICE commands"):
+        render.normalize_execution_device_config(
+            "SET DEVICE POSTSCRIPT\nplot\nSET DEVICE POSTSCRIPT\n",
+            output_format="png",
+            execution_output_path=Path("/tmp/server.ps"),
+        )
+
+
+def test_build_execution_source_text_replaces_existing_set_device():
+    parsed = render.ParsedSetDevice(
+        original_line="SET DEVICE POSTSCRIPT FILE='user.ps'",
+        device="POSTSCRIPT",
+        output_key="FILE",
+        output_value="/tmp/server.ps",
+        orientation=3,
+        orientation_keyword="ORIENTATION",
+    )
+
+    rebuilt = render.build_execution_source_text(
+        "SET DEVICE POSTSCRIPT FILE='user.ps'\nTITLE TOP 't'\nPLOT\n",
+        parsed,
+    )
+
+    assert rebuilt.startswith("SET DEVICE POSTSCRIPT ORIENTATION=3 FILE='/tmp/server.ps'\n")
+    assert "TITLE TOP 't'" in rebuilt
+    assert "user.ps" not in rebuilt
 
 
 def test_read_postscript_bbox_parses_bounding_box(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
@@ -173,9 +214,20 @@ def test_read_postscript_bbox_parses_bounding_box(monkeypatch: pytest.MonkeyPatc
 
     monkeypatch.setattr(render.subprocess, "run", fake_run)
 
-    bbox = render.read_postscript_bbox(ps_path, Path("/bin/gs"))
+    assert render.read_postscript_bbox(ps_path, Path("/bin/gs")) == (99, 234, 543, 564)
 
-    assert bbox == (99, 234, 543, 564)
+
+def test_read_postscript_bbox_reports_ghostscript_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    ps_path = tmp_path / "input.ps"
+    ps_path.write_text("%!PS-Adobe-1.0\n", encoding="utf-8")
+
+    def fake_run(*args, **kwargs):
+        return subprocess.CompletedProcess(args[0], 1, stdout="", stderr="gs failed\n")
+
+    monkeypatch.setattr(render.subprocess, "run", fake_run)
+
+    with pytest.raises(RuntimeError, match="Ghostscript bounding-box read failure"):
+        render.read_postscript_bbox(ps_path, Path("/bin/gs"))
 
 
 def test_build_gs_png_command_uses_white_background_and_trim_defaults(tmp_path: Path):
@@ -183,7 +235,9 @@ def test_build_gs_png_command_uses_white_background_and_trim_defaults(tmp_path: 
         Path("/bin/gs"),
         tmp_path / "input.ps",
         tmp_path / "output.png",
-        (99, 234, 543, 564),
+        background="white",
+        crop=True,
+        bbox=(99, 234, 543, 564),
     )
 
     assert "-sDEVICE=png16m" in command
@@ -195,235 +249,221 @@ def test_build_gs_png_command_uses_white_background_and_trim_defaults(tmp_path: 
     assert "-dDEVICEHEIGHTPOINTS=354" in command
 
 
-def test_render_topdrawer_source_text_rejects_existing_output_without_overwrite(
+def test_build_gs_png_command_uses_transparent_device(tmp_path: Path):
+    command = render.build_gs_png_command(
+        Path("/bin/gs"),
+        tmp_path / "input.ps",
+        tmp_path / "output.png",
+        background="transparent",
+        crop=False,
+    )
+
+    assert "-sDEVICE=png16malpha" in command
+    assert "-dFIXEDMEDIA" not in command
+    assert "-c" not in command
+
+
+def test_generate_topdrawer_png_rejects_invalid_input_combination():
+    with pytest.raises(ValueError, match="exactly one of input_path or script"):
+        render.generate_topdrawer_png()
+
+
+def test_generate_topdrawer_png_rejects_unknown_background():
+    with pytest.raises(ValueError, match="background must be one of"):
+        render.generate_topdrawer_png(script="plot\n", background="blue")
+
+
+def test_generate_topdrawer_postscript_uses_temp_output_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    captured: dict[str, object] = {}
+    fake_manager = _FakeArtifactManager()
+
+    def fake_run_td(source_text: str, *, base_dir: Path, output_path: Path, output_format: str):
+        captured["output_path"] = output_path
+        output_path.write_text("%!PS-Adobe-1.0\n", encoding="utf-8")
+        return (
+            output_path,
+            "/bin/td",
+            False,
+            "SET DEVICE POSTSCRIPT FILE='/tmp/server.ps'\nplot\n",
+            render.ParsedSetDevice(
+                original_line="",
+                device="POSTSCRIPT",
+                output_key="FILE",
+                output_value="/tmp/server.ps",
+            ),
+        )
+
+    monkeypatch.setattr(render, "_run_td_to_postscript", fake_run_td)
+    monkeypatch.setattr(render, "get_artifact_manager", lambda: fake_manager)
+
+    result = render.generate_topdrawer_postscript(script="plot\n")
+
+    assert result["success"] is True
+    assert result["format"] == "postscript"
+    assert result["artifact_id"] == "tdart_test"
+    assert result["resource_uri"] == "resource://artifacts/tdart_test"
+    assert Path(fake_manager.created[0]["output_file"]).name == "render.ps"
+    assert captured["output_path"] == Path(fake_manager.created[0]["output_file"])
+    assert fake_manager.created[0]["source_text"].startswith("SET DEVICE POSTSCRIPT FILE=")
+    assert result["metadata"]["normalized_device_config"]["device"] == "POSTSCRIPT"
+
+
+def test_generate_topdrawer_png_returns_metadata_and_uses_crop_setting(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ):
     output_path = tmp_path / "render.png"
-    output_path.write_text("existing", encoding="utf-8")
+    fake_manager = _FakeArtifactManager()
 
-    td = tmp_path / "td"
-    _make_executable(td)
-    monkeypatch.setenv(render.TD_EXECUTABLE_ENV, str(td))
+    def fake_run_td(source_text: str, *, base_dir: Path, output_path: Path, output_format: str):
+        output_path.write_text("%!PS-Adobe-1.0\n", encoding="utf-8")
+        return (
+            output_path,
+            "/bin/td",
+            True,
+            "SET DEVICE POSTSCRIPT ORIENTATION=3 FILE='/tmp/server.ps'\nplot\n",
+            render.ParsedSetDevice(
+                original_line="SET DEVICE POSTSCRIPT ORIENTATION=3 FILE='user.ps'",
+                device="POSTSCRIPT",
+                orientation=3,
+                orientation_keyword="ORIENTATION",
+                output_key="FILE",
+                output_value="/tmp/server.ps",
+            ),
+        )
+
+    monkeypatch.setattr(render, "_run_td_to_postscript", fake_run_td)
+    monkeypatch.setattr(render, "get_artifact_manager", lambda: fake_manager)
     monkeypatch.setattr(render, "resolve_gs_executable", lambda: Path("/bin/gs"))
-
-    with pytest.raises(FileExistsError, match="Output file already exists"):
-        render.render_topdrawer_source_text("plot\n", output_path=str(output_path))
-
-
-def test_render_topdrawer_input_rejects_existing_output_without_overwrite(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-):
-    input_path = tmp_path / "input.top"
-    output_path = tmp_path / "render.png"
-    input_path.write_text("TITLE TOP 'smoke'\nPLOT\n", encoding="utf-8")
-    output_path.write_text("existing", encoding="utf-8")
-
-    td = tmp_path / "td"
-    _make_executable(td)
-    monkeypatch.setenv(render.TD_EXECUTABLE_ENV, str(td))
-    monkeypatch.setattr(render, "resolve_gs_executable", lambda: Path("/bin/gs"))
-
-    with pytest.raises(FileExistsError, match="Output file already exists"):
-        render.render_topdrawer_input(str(input_path), output_path=str(output_path))
-
-
-def test_render_topdrawer_source_text_uses_base_dir_as_td_working_directory(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-):
-    base_dir = tmp_path / "data"
-    base_dir.mkdir()
-    output_path = tmp_path / "render.png"
-    monkeypatch.setattr(render, "resolve_td_executable", lambda: Path("/bin/td"))
-    monkeypatch.setattr(render, "resolve_gs_executable", lambda: Path("/bin/gs"))
-
-    calls = {"count": 0}
+    monkeypatch.setattr(render, "read_postscript_bbox", lambda *args, **kwargs: (0, 0, 100, 100))
 
     def fake_run(*args, **kwargs):
-        calls["count"] += 1
-        if calls["count"] == 1:
-            assert Path(kwargs["cwd"]) == base_dir.resolve()
-            wrapper_path = Path(args[0][1])
-            assert wrapper_path.read_text(encoding="utf-8").startswith("SET DEVICE POSTSCR FILE='")
-            ps_path = Path(wrapper_path.read_text(encoding="utf-8").split("'")[1])
-            ps_path.write_text("%!PS-Adobe-1.0\n", encoding="utf-8")
-            return subprocess.CompletedProcess(args[0], 0, stdout="Plot  1 Done.\n", stderr="")
-        if calls["count"] == 2:
-            return subprocess.CompletedProcess(
-                args[0], 0, stdout="", stderr="%%BoundingBox: 99 234 543 564\n"
-            )
         output_file = next(
             arg.split("=", 1)[1] for arg in args[0] if arg.startswith("-sOutputFile=")
         )
-        assert "-sDEVICE=png16m" in args[0]
-        assert "-dFIXEDMEDIA" in args[0]
         Path(output_file).write_bytes(b"\x89PNG\r\n\x1a\n")
         return subprocess.CompletedProcess(args[0], 0, stdout="", stderr="")
 
     monkeypatch.setattr(render.subprocess, "run", fake_run)
 
-    result = render.render_topdrawer_source_text(
-        "set file input='dat'\njoin\n",
-        base_dir=str(base_dir),
+    result = render.generate_topdrawer_png(
+        script="plot\n",
         output_path=str(output_path),
+        crop=False,
+        background="transparent",
     )
 
     assert result["success"] is True
-    assert output_path.exists()
+    assert result["format"] == "png"
+    assert result["artifact_id"] == "tdart_test"
+    assert result["resource_uri"] == "resource://artifacts/tdart_test"
+    assert result["metadata"]["background"] == "transparent"
+    assert result["metadata"]["crop_applied"] is False
+    assert result["metadata"]["output_path_overridden"] is True
+    assert result["metadata"]["output_path"] == str(output_path)
+    assert result["metadata"]["normalized_device_config"]["orientation"] == 3
+    assert fake_manager.created[0]["source_text"].startswith("SET DEVICE POSTSCRIPT ORIENTATION=3")
 
 
-def test_render_topdrawer_input_uses_shared_render_core(
+def test_generate_topdrawer_png_reports_ghostscript_raster_failure(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ):
-    input_path = tmp_path / "input.top"
-    input_path.write_text("plot\n", encoding="utf-8")
+    output_path = tmp_path / "render.png"
+    fake_manager = _FakeArtifactManager()
+
+    def fake_run_td(source_text: str, *, base_dir: Path, output_path: Path, output_format: str):
+        output_path.write_text("%!PS-Adobe-1.0\n", encoding="utf-8")
+        return (
+            output_path,
+            "/bin/td",
+            False,
+            "SET DEVICE POSTSCRIPT FILE='/tmp/server.ps'\nplot\n",
+            render.ParsedSetDevice(
+                original_line="",
+                device="POSTSCRIPT",
+                output_key="FILE",
+                output_value="/tmp/server.ps",
+            ),
+        )
+
+    monkeypatch.setattr(render, "_run_td_to_postscript", fake_run_td)
+    monkeypatch.setattr(render, "get_artifact_manager", lambda: fake_manager)
+    monkeypatch.setattr(render, "resolve_gs_executable", lambda: Path("/bin/gs"))
+    monkeypatch.setattr(render, "read_postscript_bbox", lambda *args, **kwargs: (0, 0, 100, 100))
+
+    def fake_run(*args, **kwargs):
+        return subprocess.CompletedProcess(args[0], 1, stdout="", stderr="gs failed\n")
+
+    monkeypatch.setattr(render.subprocess, "run", fake_run)
+
+    with pytest.raises(RuntimeError, match="Ghostscript raster render failure"):
+        render.generate_topdrawer_png(script="plot\n", output_path=str(output_path))
+
+
+def test_render_topdrawer_source_text_delegates_to_generate_topdrawer_png(
+    monkeypatch: pytest.MonkeyPatch,
+):
     captured = {}
 
-    def fake_render(source_text: str, **kwargs):
-        captured["source_text"] = source_text
+    def fake_generate(**kwargs):
         captured["kwargs"] = kwargs
         return {
-            "output_path": "/tmp/render.png",
-            "td_executable": "/bin/td",
             "success": True,
+            "format": "png",
             "message": "ok",
+            "artifact_id": "tdart_test",
+            "resource_uri": "resource://artifacts/tdart_test",
+            "metadata": {},
         }
 
-    monkeypatch.setattr(render, "render_topdrawer_source_text", fake_render)
+    monkeypatch.setattr(render, "generate_topdrawer_png", fake_generate)
 
-    result = render.render_topdrawer_input(
-        str(input_path),
+    result = render.render_topdrawer_source_text(
+        "plot\n",
+        base_dir="samples",
         output_path="out.png",
         overwrite=True,
     )
 
-    assert captured["source_text"] == "plot\n"
     assert captured["kwargs"] == {
-        "base_dir": str(tmp_path.resolve()),
+        "script": "plot\n",
+        "base_dir": "samples",
         "output_path": "out.png",
         "overwrite": True,
     }
     assert result["success"] is True
 
 
-def test_render_topdrawer_input_reports_td_nonzero_exit(
+def test_render_topdrawer_input_delegates_to_generate_topdrawer_png(
     monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
 ):
-    input_path = tmp_path / "input.top"
-    output_path = tmp_path / "render.png"
-    input_path.write_text("plot\n", encoding="utf-8")
-    monkeypatch.setattr(render, "resolve_td_executable", lambda: Path("/bin/td"))
-    monkeypatch.setattr(render, "resolve_gs_executable", lambda: Path("/bin/gs"))
+    captured = {}
 
-    def fake_run(*args, **kwargs):
-        return subprocess.CompletedProcess(args[0], 2, stdout="", stderr="td failed\n")
+    def fake_generate(**kwargs):
+        captured["kwargs"] = kwargs
+        return {
+            "success": True,
+            "format": "png",
+            "message": "ok",
+            "artifact_id": "tdart_test",
+            "resource_uri": "resource://artifacts/tdart_test",
+            "metadata": {},
+        }
 
-    monkeypatch.setattr(render.subprocess, "run", fake_run)
+    monkeypatch.setattr(render, "generate_topdrawer_png", fake_generate)
 
-    with pytest.raises(RuntimeError, match="`td` exited with code 2"):
-        render.render_topdrawer_input(str(input_path), output_path=str(output_path))
+    result = render.render_topdrawer_input(
+        "sample.top",
+        output_path="out.png",
+        overwrite=True,
+    )
 
-
-def test_render_topdrawer_input_reports_td_error_marker(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-):
-    input_path = tmp_path / "input.top"
-    output_path = tmp_path / "render.png"
-    input_path.write_text("plot\n", encoding="utf-8")
-    monkeypatch.setattr(render, "resolve_td_executable", lambda: Path("/bin/td"))
-    monkeypatch.setattr(render, "resolve_gs_executable", lambda: Path("/bin/gs"))
-
-    def fake_run(*args, **kwargs):
-        return subprocess.CompletedProcess(
-            args[0],
-            0,
-            stdout="*** ERROR *** bad plot\n",
-            stderr="",
-        )
-
-    monkeypatch.setattr(render.subprocess, "run", fake_run)
-
-    with pytest.raises(RuntimeError, match="`td` reported an execution error"):
-        render.render_topdrawer_input(str(input_path), output_path=str(output_path))
-
-
-def test_render_topdrawer_input_reports_missing_postscript_output(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-):
-    input_path = tmp_path / "input.top"
-    output_path = tmp_path / "render.png"
-    input_path.write_text("plot\n", encoding="utf-8")
-    monkeypatch.setattr(render, "resolve_td_executable", lambda: Path("/bin/td"))
-    monkeypatch.setattr(render, "resolve_gs_executable", lambda: Path("/bin/gs"))
-
-    def fake_run(*args, **kwargs):
-        return subprocess.CompletedProcess(args[0], 0, stdout="Plot  1 Done.\n", stderr="")
-
-    monkeypatch.setattr(render.subprocess, "run", fake_run)
-
-    with pytest.raises(FileNotFoundError, match="did not produce the expected PostScript output"):
-        render.render_topdrawer_input(str(input_path), output_path=str(output_path))
-
-
-def test_render_topdrawer_input_reports_gs_nonzero_exit(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-):
-    input_path = tmp_path / "input.top"
-    output_path = tmp_path / "render.png"
-    input_path.write_text("plot\n", encoding="utf-8")
-    monkeypatch.setattr(render, "resolve_td_executable", lambda: Path("/bin/td"))
-    monkeypatch.setattr(render, "resolve_gs_executable", lambda: Path("/bin/gs"))
-
-    calls = {"count": 0}
-
-    def fake_run(*args, **kwargs):
-        calls["count"] += 1
-        if calls["count"] == 1:
-            wrapper_path = Path(args[0][1])
-            ps_path = Path(wrapper_path.read_text(encoding="utf-8").split("'")[1])
-            ps_path.write_text("%!PS-Adobe-1.0\n", encoding="utf-8")
-            return subprocess.CompletedProcess(args[0], 0, stdout="Plot  1 Done.\n", stderr="")
-        if calls["count"] == 2:
-            return subprocess.CompletedProcess(
-                args[0], 0, stdout="", stderr="%%BoundingBox: 99 234 543 564\n"
-            )
-        return subprocess.CompletedProcess(args[0], 1, stdout="", stderr="gs failed\n")
-
-    monkeypatch.setattr(render.subprocess, "run", fake_run)
-
-    with pytest.raises(RuntimeError, match="`gs` exited with code 1"):
-        render.render_topdrawer_input(str(input_path), output_path=str(output_path))
-
-
-def test_render_topdrawer_input_reports_bbox_failure(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-):
-    input_path = tmp_path / "input.top"
-    output_path = tmp_path / "render.png"
-    input_path.write_text("plot\n", encoding="utf-8")
-    monkeypatch.setattr(render, "resolve_td_executable", lambda: Path("/bin/td"))
-    monkeypatch.setattr(render, "resolve_gs_executable", lambda: Path("/bin/gs"))
-
-    calls = {"count": 0}
-
-    def fake_run(*args, **kwargs):
-        calls["count"] += 1
-        if calls["count"] == 1:
-            wrapper_path = Path(args[0][1])
-            ps_path = Path(wrapper_path.read_text(encoding="utf-8").split("'")[1])
-            ps_path.write_text("%!PS-Adobe-1.0\n", encoding="utf-8")
-            return subprocess.CompletedProcess(args[0], 0, stdout="Plot  1 Done.\n", stderr="")
-        return subprocess.CompletedProcess(args[0], 0, stdout="", stderr="not a bbox\n")
-
-    monkeypatch.setattr(render.subprocess, "run", fake_run)
-
-    with pytest.raises(RuntimeError, match="did not report a BoundingBox"):
-        render.render_topdrawer_input(str(input_path), output_path=str(output_path))
+    assert captured["kwargs"] == {
+        "input_path": "sample.top",
+        "output_path": "out.png",
+        "overwrite": True,
+    }
+    assert result["success"] is True

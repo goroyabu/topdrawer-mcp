@@ -6,10 +6,15 @@ from pathlib import Path
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.resources.base import Resource
+from mcp.server.fastmcp.resources.templates import ResourceTemplate
 
+from topdrawer_mcp.artifacts import get_artifact_manager
 from topdrawer_mcp.command_lookup import CommandLookupEntry
 from topdrawer_mcp.command_lookup import load_command_lookup_index
 from topdrawer_mcp.command_lookup import lookup_command_entry
+from topdrawer_mcp.render import generate_topdrawer_png as generate_topdrawer_png_core
+from topdrawer_mcp.render import generate_topdrawer_postscript as generate_topdrawer_postscript_core
 from topdrawer_mcp.render import RenderResult
 from topdrawer_mcp.render import render_topdrawer_input
 from topdrawer_mcp.render import render_topdrawer_source_text
@@ -26,6 +31,35 @@ from topdrawer_mcp.script_scan import scan_topdrawer_script_text
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_MANUAL_PATH = ROOT_DIR / "data" / "topdrawer.txt"
+
+
+class ArtifactOutputResource(Resource):
+    """Dynamic artifact output resource that updates MIME type per artifact."""
+
+    artifact_id: str
+
+    async def read(self) -> str | bytes:
+        manager = get_artifact_manager()
+        record = manager.load_artifact(self.artifact_id)
+        self.mime_type = record.output_mime_type
+        return manager.read_output(self.artifact_id)
+
+
+class ArtifactOutputTemplate(ResourceTemplate):
+    """Custom template for artifact output resources with per-artifact MIME types."""
+
+    async def create_resource(self, uri: str, params: dict[str, Any], context: Any = None) -> Resource:
+        return ArtifactOutputResource(
+            uri=uri,  # type: ignore[arg-type]
+            name=self.name,
+            title=self.title,
+            description=self.description,
+            mime_type=self.mime_type,
+            icons=self.icons,
+            annotations=self.annotations,
+            meta=self.meta,
+            artifact_id=params["artifact_id"],
+        )
 
 
 class ManualText:
@@ -149,6 +183,48 @@ def render_topdrawer_file(
     """
     return render_topdrawer_input(
         input_path=input_path,
+        output_path=output_path,
+        overwrite=overwrite,
+    )
+
+
+def generate_topdrawer_png(
+    input_path: str | None = None,
+    script: str | None = None,
+    base_dir: str | None = None,
+    output_path: str | None = None,
+    overwrite: bool = False,
+    dpi: int = 160,
+    padding: int = 12,
+    crop: bool = True,
+    background: str = "white",
+) -> RenderResult:
+    """Generate a PNG image from a Topdrawer file path or inline script."""
+    return generate_topdrawer_png_core(
+        input_path=input_path,
+        script=script,
+        base_dir=base_dir,
+        output_path=output_path,
+        overwrite=overwrite,
+        dpi=dpi,
+        padding=padding,
+        crop=crop,
+        background=background,
+    )
+
+
+def generate_topdrawer_postscript(
+    input_path: str | None = None,
+    script: str | None = None,
+    base_dir: str | None = None,
+    output_path: str | None = None,
+    overwrite: bool = False,
+) -> RenderResult:
+    """Generate PostScript from a Topdrawer file path or inline script."""
+    return generate_topdrawer_postscript_core(
+        input_path=input_path,
+        script=script,
+        base_dir=base_dir,
         output_path=output_path,
         overwrite=overwrite,
     )
@@ -304,6 +380,26 @@ def command_resource_nested(parent: str, command: str) -> CommandLookupEntry:
     return command_resource(f"{parent}/{command}")
 
 
+def artifact_manifest_resource(artifact_id: str) -> dict[str, Any]:
+    """Return the manifest for one generated artifact bundle."""
+    return get_artifact_manager().read_manifest(artifact_id)
+
+
+def artifact_output_resource(artifact_id: str) -> bytes | str:
+    """Return the primary output for one generated artifact bundle."""
+    return get_artifact_manager().read_output(artifact_id)
+
+
+def artifact_source_resource(artifact_id: str) -> str:
+    """Return the execution-time Topdrawer source for one generated artifact bundle."""
+    return get_artifact_manager().read_source(artifact_id)
+
+
+def artifact_metadata_resource(artifact_id: str) -> dict[str, Any]:
+    """Return structured metadata for one generated artifact bundle."""
+    return get_artifact_manager().read_metadata(artifact_id)
+
+
 def inspect_topdrawer_script(
     script_text: str | None = None,
     input_path: str | None = None,
@@ -353,6 +449,8 @@ def create_server() -> FastMCP:
     """Create the MCP server and register its tools."""
     server = FastMCP("topdrawer-mcp")
     server.add_tool(search_manual)
+    server.add_tool(generate_topdrawer_png, structured_output=True)
+    server.add_tool(generate_topdrawer_postscript, structured_output=True)
     server.add_tool(render_topdrawer_file, structured_output=True)
     server.add_tool(render_topdrawer_script, structured_output=True)
     server.add_tool(list_manual_samples, structured_output=True)
@@ -382,6 +480,41 @@ def create_server() -> FastMCP:
         description="One reviewed nested Topdrawer command entry by canonical resource path.",
         mime_type="application/json",
     )(command_resource_nested)
+    server.resource(
+        "resource://artifacts/{artifact_id}",
+        name="artifact_manifest_resource",
+        title="Generated artifact manifest",
+        description="Manifest for one generated Topdrawer artifact bundle.",
+        mime_type="application/json",
+    )(artifact_manifest_resource)
+    server._resource_manager._templates["resource://artifacts/{artifact_id}/output"] = ArtifactOutputTemplate(
+        uri_template="resource://artifacts/{artifact_id}/output",
+        name="artifact_output_resource",
+        title="Generated artifact output",
+        description="Primary output content for one generated Topdrawer artifact bundle.",
+        mime_type="application/octet-stream",
+        fn=artifact_output_resource,
+        parameters={
+            "type": "object",
+            "properties": {"artifact_id": {"title": "Artifact Id", "type": "string"}},
+            "required": ["artifact_id"],
+        },
+        context_kwarg=None,
+    )
+    server.resource(
+        "resource://artifacts/{artifact_id}/source",
+        name="artifact_source_resource",
+        title="Generated artifact source",
+        description="Execution-time Topdrawer source for one generated artifact bundle.",
+        mime_type="text/plain",
+    )(artifact_source_resource)
+    server.resource(
+        "resource://artifacts/{artifact_id}/metadata",
+        name="artifact_metadata_resource",
+        title="Generated artifact metadata",
+        description="Structured metadata for one generated Topdrawer artifact bundle.",
+        mime_type="application/json",
+    )(artifact_metadata_resource)
     server.prompt(
         name="inspect_topdrawer_script",
         title="Inspect Topdrawer script",

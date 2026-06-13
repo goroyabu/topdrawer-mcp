@@ -45,7 +45,9 @@ def test_render_topdrawer_input_renders_error_bar_sample(tmp_path: Path):
     )
 
     assert result["success"] is True
-    assert Path(result["output_path"]) == output_path.resolve()
+    assert result["artifact_id"]
+    assert result["resource_uri"].startswith("resource://artifacts/")
+    assert Path(result["metadata"]["output_path"]) == output_path.resolve()
     _assert_png_file(output_path)
 
 
@@ -74,7 +76,8 @@ def test_render_topdrawer_input_renders_manual_style_symbol_sample(tmp_path: Pat
     )
 
     assert result["success"] is True
-    assert Path(result["output_path"]) == output_path.resolve()
+    assert result["artifact_id"]
+    assert Path(result["metadata"]["output_path"]) == output_path.resolve()
     _assert_png_file(output_path)
 
 
@@ -120,7 +123,8 @@ def test_render_topdrawer_source_text_renders_error_bar_sample(tmp_path: Path):
     )
 
     assert result["success"] is True
-    assert Path(result["output_path"]) == output_path.resolve()
+    assert result["artifact_id"]
+    assert Path(result["metadata"]["output_path"]) == output_path.resolve()
     _assert_png_file(output_path)
 
 
@@ -140,5 +144,6 @@ def test_render_topdrawer_source_text_renders_relative_data_file_from_base_dir(t
     )
 
     assert result["success"] is True
-    assert Path(result["output_path"]) == output_path.resolve()
+    assert result["artifact_id"]
+    assert Path(result["metadata"]["output_path"]) == output_path.resolve()
     _assert_png_file(output_path)
