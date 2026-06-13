@@ -107,6 +107,26 @@ Use this viewpoint when the scenario is mainly about environment diagnosis:
   - external dependency problem
 - Was the next recommended action within repository scope?
 
+### Runtime Reproduction
+
+For the current repository, the verified way to reproduce a broken render
+runtime in a fresh Codex session is to override the MCP server environment at
+Codex launch time instead of only changing the parent shell environment.
+
+Verified example:
+
+```bash
+codex -a never -s workspace-write exec \
+  --ephemeral \
+  -C /path/to/topdrawer-mcp \
+  -c 'mcp_servers.topdrawermcp.env.GS_EXECUTABLE_PATH="/nonexistent/gs"' \
+  "Call get_server_runtime_info and inspect render failure behavior."
+```
+
+This should make `get_server_runtime_info` report Ghostscript as unavailable
+inside the fresh session, and it is the preferred setup for the
+`runtime-triage-missing-render-prereq` scenario.
+
 ### Follow-Up Observations
 
 When a run reveals a real issue, note only the important points:

@@ -36,3 +36,10 @@ Ghostscript path through the MCP server configuration, for example by using the
 fixture at `tests/fixtures/workflow_validation_support/runtime_configs/mcp-broken-gs.json`
 or an equivalent `mcp_servers.topdrawermcp.env.GS_EXECUTABLE_PATH=/nonexistent/gs`
 override when launching the fresh session.
+
+When running through `codex exec`, prefer a direct config override such as:
+
+- `-c 'mcp_servers.topdrawermcp.env.GS_EXECUTABLE_PATH="/nonexistent/gs"'`
+
+This has been verified to affect the fresh-session MCP server, unlike changing
+only the parent shell environment before launch.
