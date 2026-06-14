@@ -13,6 +13,8 @@ from topdrawer_mcp.artifacts import get_artifact_manager
 from topdrawer_mcp.command_lookup import CommandLookupEntry
 from topdrawer_mcp.command_lookup import load_command_lookup_index
 from topdrawer_mcp.command_lookup import lookup_command_entry
+from topdrawer_mcp.reverse_lookup import ReverseLookupResult
+from topdrawer_mcp.reverse_lookup import reverse_lookup_command_candidates
 from topdrawer_mcp.render import generate_topdrawer_png as generate_topdrawer_png_core
 from topdrawer_mcp.render import generate_topdrawer_postscript as generate_topdrawer_postscript_core
 from topdrawer_mcp.render import RenderResult
@@ -289,6 +291,11 @@ def lookup_command(command: str) -> CommandLookupEntry:
     return lookup_command_entry(command)
 
 
+def reverse_lookup_commands(query: str, limit: int = 5) -> ReverseLookupResult:
+    """Return ranked canonical command headings for a short natural-language query."""
+    return reverse_lookup_command_candidates(query, limit=limit)
+
+
 def get_server_runtime_info() -> RuntimeInfoResult:
     """Return resolved runtime/config information for manual and render features."""
     return get_runtime_info()
@@ -438,9 +445,9 @@ def discover_topdrawer_command(query: str, context: str | None = None) -> str:
     return (
         f"{context_line}"
         f"Find the best Topdrawer command for: {stripped_query}\n\n"
-        "1. Call `search_manual` with the key words or phrase.\n"
-        "2. Extract likely command candidates from the manual matches.\n"
-        "3. Call `lookup_command` for the best candidates.\n"
+        "1. Call `reverse_lookup_commands` with the key words or phrase.\n"
+        "2. Call `lookup_command` for the best returned candidates.\n"
+        "3. Call `search_manual` only if the reverse lookup or command guidance still leaves ambiguity.\n"
         "4. Summarize the best match and note any ambiguity between candidates.\n"
     )
 
@@ -456,6 +463,7 @@ def create_server() -> FastMCP:
     server.add_tool(list_manual_samples, structured_output=True)
     server.add_tool(get_manual_sample, structured_output=True)
     server.add_tool(lookup_command, structured_output=True)
+    server.add_tool(reverse_lookup_commands, structured_output=True)
     server.add_tool(get_server_runtime_info, structured_output=True)
     server.add_tool(scan_topdrawer_script, structured_output=True)
     server.add_tool(scan_topdrawer_file, structured_output=True)

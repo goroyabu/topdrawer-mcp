@@ -10,19 +10,22 @@ closest supported path.
 ## Expected Workflow
 
 1. Use `discover_topdrawer_command` or a similar discovery-oriented start.
-2. Use `search_manual` to look for the requested capability or nearby command
-   families.
+2. Use `reverse_lookup_commands` to find likely plotting command families from
+   the request wording.
 3. Use `lookup_command` for the most relevant plotting commands, such as
    `PLOT`, `JOIN`, or data-entry-related commands, to confirm what is actually
    supported.
-4. Explain that direct function plotting is not currently exposed by this MCP
+4. Use `search_manual` only if the reverse lookup candidates or command
+   guidance still are not enough to resolve the capability question.
+5. Explain that direct function plotting is not currently exposed by this MCP
    surface.
-5. Describe the closest supported path, such as supplying explicit data points
+6. Describe the closest supported path, such as supplying explicit data points
    and then using a plotting command.
 
 ## Required Surface Elements
 
 - `discover_topdrawer_command` prompt or equivalent discovery-oriented flow
+- `reverse_lookup_commands`
 - `search_manual`
 - `lookup_command`
 - optional command resources

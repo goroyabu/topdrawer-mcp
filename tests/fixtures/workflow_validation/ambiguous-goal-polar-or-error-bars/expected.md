@@ -9,14 +9,16 @@ relevant command family through the current discovery surface.
 
 1. Use `discover_topdrawer_command` or an equivalent prompt-guided discovery
    flow.
-2. Use `search_manual` with the user's wording.
-3. Extract likely command candidates.
-4. Confirm the best candidate with `lookup_command`.
+2. Use `reverse_lookup_commands` with the user's wording.
+3. Confirm the best candidate with `lookup_command`.
+4. Use `search_manual` only if the reverse lookup candidates or command
+   guidance remain ambiguous.
 5. Explain which command path should be used before editing the script.
 
 ## Required Surface Elements
 
 - `discover_topdrawer_command` prompt or equivalent prompt-guided flow
+- `reverse_lookup_commands`
 - `search_manual`
 - `lookup_command`
 

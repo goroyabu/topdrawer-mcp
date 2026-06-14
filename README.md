@@ -9,6 +9,7 @@ command lookup, script inspection, and render workflows.
 Tools:
 
 - `search_manual` for case-insensitive substring search with line-numbered snippets
+- `reverse_lookup_commands` for ranked command-name discovery from short natural-language queries
 - `lookup_command` for structured command guidance by canonical name or unique alias
 - `get_server_runtime_info` for resolved manual/render runtime configuration
 - `scan_topdrawer_script` for extracting recognized commands from inline script text
@@ -31,7 +32,7 @@ Resources:
 Prompts:
 
 - `inspect_topdrawer_script` for reviewing an existing script with `scan_topdrawer_*`, `lookup_command`, and `search_manual`
-- `discover_topdrawer_command` for finding the most likely command from a phrase or user intent
+- `discover_topdrawer_command` for finding the most likely command from a phrase or user intent through reverse lookup first
 
 ## Scope
 
@@ -384,7 +385,25 @@ Input:
 
 Looks up one reviewed command-guidance entry by canonical command name or a
 unique alias. This tool returns structured command metadata only. Use
-`search_manual` for free-text manual search.
+`reverse_lookup_commands` first when the caller starts from vague wording
+rather than a command name.
+
+### `reverse_lookup_commands`
+
+Input:
+
+```json
+{
+  "query": "polar plot",
+  "limit": 5
+}
+```
+
+Returns a small ranked list of canonical command headings for a short query.
+`limit` defaults to `5` and is clamped to `1..20`. Use this before
+`lookup_command` when the caller knows the intent but not the Topdrawer
+command name yet. Use `search_manual` only if the ranked candidates and
+structured command guidance still are not enough.
 
 ### `list_manual_samples`
 
@@ -476,7 +495,7 @@ Prompt arguments:
 This prompt guides the agent through the current phrase-to-command workflow:
 
 ```text
-search_manual -> extract candidates -> lookup_command
+reverse_lookup_commands -> lookup_command -> search_manual if needed
 ```
 
 ## Test

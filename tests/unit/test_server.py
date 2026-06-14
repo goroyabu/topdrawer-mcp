@@ -106,6 +106,14 @@ def test_create_server_registers_search_and_render_tools():
     assert "scan_topdrawer_file" in tool_names
 
 
+def test_create_server_registers_reverse_lookup_tool():
+    tool_names = {
+        tool.name for tool in asyncio.run(server.create_server().list_tools())
+    }
+
+    assert "reverse_lookup_commands" in tool_names
+
+
 def test_create_server_registers_resources_and_prompts():
     resource_uris = {
         str(resource.uri) for resource in asyncio.run(server.create_server().list_resources())
@@ -299,6 +307,22 @@ def test_discover_topdrawer_command_prompt_returns_search_lookup_flow():
     assert "lookup_command" in message_text
 
 
+def test_discover_topdrawer_command_prompt_mentions_reverse_lookup():
+    result = asyncio.run(
+        server.create_server().get_prompt(
+            "discover_topdrawer_command",
+            {"query": "polar"},
+        )
+    )
+
+    message_text = result.messages[0].content.text
+    reverse_lookup_index = message_text.index("reverse_lookup_commands")
+    lookup_index = message_text.index("lookup_command")
+    search_index = message_text.index("search_manual")
+
+    assert reverse_lookup_index < lookup_index < search_index
+
+
 def test_render_topdrawer_script_rejects_empty_script():
     with pytest.raises(ValueError, match="script must be a non-empty string"):
         server.render_topdrawer_script("   ")
@@ -438,6 +462,13 @@ def test_lookup_command_returns_title_entry():
 
     assert result["command"] == "TITLE"
     assert result["section"] == "15.72"
+
+
+def test_reverse_lookup_commands_returns_ranked_candidates():
+    result = server.reverse_lookup_commands("polar")
+
+    assert result["query"] == "polar"
+    assert result["commands"][0] == "SET POLAR"
 
 
 def test_lookup_command_returns_delete_entry():
