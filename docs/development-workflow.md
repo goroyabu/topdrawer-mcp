@@ -79,6 +79,26 @@ For normal development work:
 
 Keep changes narrow and reviewable.
 
+## Release Flow
+
+For repository releases such as `1.0.0`, use this sequence:
+
+1. Confirm that the intended release scope is already complete on `main`.
+2. Create a focused release branch from `main`.
+3. Bump the package version in `pyproject.toml`.
+4. Update `uv.lock` when the editable project entry records the package
+   version, so the lockfile stays consistent with `pyproject.toml`.
+5. Run the relevant verification for the release-preparation branch.
+6. Open and merge a pull request containing the version bump and any release
+   workflow documentation updates.
+7. After the pull request is merged, create the release tag and GitHub Release
+   from the merged `main` state.
+8. Sync local branches and clean up the release branch after the release work
+   is complete.
+
+Keep release changes narrow. Do not mix unrelated feature work into the
+release-preparation branch.
+
 ## Issue Close Policy
 
 Issues close when the corresponding change is merged to `main`.
