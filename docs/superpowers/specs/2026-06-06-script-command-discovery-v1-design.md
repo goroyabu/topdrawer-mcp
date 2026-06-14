@@ -67,6 +67,14 @@ Example inputs include words taken from:
 - user instructions such as "error bars" or "polar"
 - script text such as labels, axis terms, or option words
 
+The intended public contract is:
+
+- input: one short query string
+- output: a small ordered list of candidate command headings
+
+The tool is meant to support a follow-up `lookup_command` call rather than to
+explain the commands by itself.
+
 ## Non-Goals
 
 - Do not turn the scanner into a full Topdrawer parser.
@@ -102,9 +110,87 @@ That tool should be intentionally simple and candidate-oriented:
 
 - input: a short query string
 - output: a small list of candidate commands
+- default candidate limit: `5`
+- optional caller-provided max result count
 
 It should search over repository-owned structured command data rather than over
 the full manual text alone.
+
+## Reverse-Lookup Specific Direction
+
+### Candidate source
+
+The reverse-lookup layer should search across all currently known command
+entries, not only the reviewed subset.
+
+However, reviewed entries should rank more strongly by default because they are
+currently the higher-value, more frequently needed command set and usually have
+better curated descriptive text.
+
+This is not intended as a separate reviewed-only mode. It is an internal
+ranking preference so that the most useful practical commands tend to surface
+first.
+
+### Match fields
+
+The reverse-lookup layer should match query text against command-oriented
+structured fields such as:
+
+- canonical command name
+- aliases
+- reviewed title
+- reviewed summary
+- other short command description text already available in repository-owned
+  command data
+
+Parent-command or section metadata may be used as weak supporting signals, but
+the tool should stay command-centered rather than becoming section discovery.
+
+### Result shape
+
+The initial result shape should stay narrow:
+
+- an ordered list of candidate command headings only
+
+It should not return:
+
+- full reviewed command payloads
+- long explanations
+- manual snippets
+- section-oriented results
+
+The intended next step is:
+
+1. call reverse lookup
+2. inspect returned command names
+3. call `lookup_command` on the best candidates
+
+### Ranking intent
+
+The ranking should favor practical narrowing over theoretical completeness.
+
+The desired ordering signals are:
+
+- strong signal:
+  - command-name match
+  - alias match
+  - concise description/title/summary match
+- weak signal:
+  - parent-command context
+  - section context
+- preference signal:
+  - reviewed/high-value command entries should rise naturally when they match
+
+This should allow flows such as:
+
+- `"polar"` -> `SET POLAR`
+- `"error bars"` -> commands such as `SET ORDER` or other likely plotting
+  candidates
+- `"points and line"` -> plotting candidates such as `JOIN`
+
+The tool does not need to prove that the top candidate is the single correct
+command. It only needs to return a short, plausible set that improves the next
+`lookup_command` step over going directly to broad manual search.
 
 ## Expected Agent Workflows
 
@@ -134,3 +220,5 @@ the full manual text alone.
   concrete runtime need requires it.
 - Preserve `search_manual` as the plain-text fallback rather than the primary
   structured discovery tool.
+- Keep reverse lookup command-only for v1; do not expand it into section lookup
+  or general manual topic search.
