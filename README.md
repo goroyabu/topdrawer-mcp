@@ -89,38 +89,87 @@ TOPDRAWER_DOC_SOURCE_PATH=/path/to/topdrawer.doc uv run topdrawer-mcp-preprocess
 
 ## Run
 
-VS Code starts the server with `uv --directory ${workspaceFolder} run
-topdrawer-mcp` in `.vscode/mcp.json`.
-
-`${workspaceFolder}` is a VS Code substitution and is not portable to other MCP
-clients. Outside VS Code, use an absolute repository path, for example:
-
-```bash
-uv --directory /absolute/path/to/topdrawer-mcp run topdrawer-mcp
-```
-
 From the repository root:
 
 ```bash
 uv run topdrawer-mcp
 ```
 
-To use `generate_topdrawer_png` and the compatibility render tools, install `td` and Ghostscript (`gs`) so both are
-available on `PATH`. You can override the executable paths with:
+Outside the repository root, use an absolute repository path:
+
+```bash
+uv --directory /absolute/path/to/topdrawer-mcp run topdrawer-mcp
+```
+
+### MCP Client Configuration
+
+For GitHub Copilot in VS Code, a global MCP configuration can point at this
+repository by using its absolute path in your user-level `mcp.json`, for
+example:
+
+```json
+{
+  "servers": {
+    "topdrawer-mcp": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/absolute/path/to/topdrawer-mcp",
+        "run",
+        "topdrawer-mcp"
+      ],
+      "env": {
+        "TOPDRAWER_MANUAL_PATH": "/absolute/path/to/topdrawer-mcp/data/topdrawer.txt",
+        "TD_EXECUTABLE_PATH": "/absolute/path/to/td",
+        "GS_EXECUTABLE_PATH": "/absolute/path/to/gs"
+      }
+    }
+  }
+}
+```
+
+Replace `/absolute/path/to/topdrawer-mcp` with your local clone of this
+repository. Keep the `env` block only when you need to override the manual path
+or executable resolution explicitly.
+
+The repository also includes a workspace-local VS Code example in:
+
+```text
+.vscode/mcp.json
+```
+
+That file uses `${workspaceFolder}`, which is convenient for repository-local
+use in VS Code but is not the right pattern for a global IDE configuration.
+
+### Render Prerequisites
+
+To use `generate_topdrawer_png` and the compatibility render tools, install
+Topdrawer (`td`) and Ghostscript (`gs`) so both are available on `PATH`.
+
+You can also override the resolved executables explicitly:
 
 ```bash
 TD_EXECUTABLE_PATH=/path/to/td GS_EXECUTABLE_PATH=/path/to/gs uv run topdrawer-mcp
 ```
 
-When running through an MCP client, pass `TOPDRAWER_MANUAL_PATH` and
-`TD_EXECUTABLE_PATH` (and optionally `GS_EXECUTABLE_PATH`) through the client's
+When running through an MCP client, pass `TOPDRAWER_MANUAL_PATH`,
+`TD_EXECUTABLE_PATH`, and optionally `GS_EXECUTABLE_PATH` through the client's
 environment configuration rather than editing repository defaults.
 
-VS Code starts the server through:
+### First Troubleshooting Step
 
-```text
-.vscode/mcp.json
-```
+If render-related tools fail, call `get_server_runtime_info` first.
+
+This is the fastest way to check:
+
+- whether the manual path is resolved as expected
+- whether `td` is available
+- whether `gs` is available
+- whether the client-side environment override actually reached the MCP server
+
+If `td` or `gs` is missing, prefer fixing the MCP client configuration or
+explicit executable-path override before debugging the `.top` script itself.
 
 ## MCP Tools
 
@@ -247,6 +296,10 @@ Returns structured read-only runtime information for:
 - the manual-search source path
 - the tracked command-lookup source files
 - the resolved `td` and `gs` executables used for rendering
+
+Use this as the first troubleshooting step when render tools fail because of
+missing executables, broken `PATH` resolution, or client-side MCP environment
+configuration.
 
 ### `scan_topdrawer_script`
 
