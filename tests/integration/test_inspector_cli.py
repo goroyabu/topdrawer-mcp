@@ -68,6 +68,7 @@ def test_inspector_lists_search_manual(write_manual):
 
     names = [tool["name"] for tool in response["tools"]]
     assert "search_manual" in names
+    assert "reverse_lookup_commands" in names
     assert "generate_topdrawer_png" in names
     assert "generate_topdrawer_postscript" in names
     assert "render_topdrawer_file" in names
@@ -178,8 +179,35 @@ def test_inspector_gets_discover_topdrawer_command_prompt(write_manual):
     )
 
     message = response["messages"][0]["content"]["text"]
+    reverse_lookup_index = message.index("reverse_lookup_commands")
+    lookup_index = message.index("lookup_command")
+    search_index = message.index("search_manual")
+
+    assert reverse_lookup_index < lookup_index < search_index
     assert "search_manual" in message
     assert "lookup_command" in message
+
+
+def test_inspector_calls_reverse_lookup_commands(write_manual):
+    manual_path = write_manual("BARGRAPH command\n")
+
+    response = _run_inspector(
+        manual_path,
+        "--method",
+        "tools/call",
+        "--tool-name",
+        "reverse_lookup_commands",
+        "--tool-arg",
+        "query=polar",
+        "--tool-arg",
+        "limit=3",
+    )
+
+    assert response["isError"] is False
+    structured = response["structuredContent"]
+    assert structured["query"] == "polar"
+    assert len(structured["commands"]) <= 3
+    assert "SET POLAR" in structured["commands"]
 
 
 def test_inspector_calls_search_manual(write_manual):
